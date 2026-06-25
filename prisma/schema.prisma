@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  email        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles Article[]
+
+  @@index([slug])
+}
+
+model Article {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  excerpt     String?       @db.Text
+  content     String        @db.LongText
+  coverImage  String?
+  author      String        @default("Ban biên tập")
+  source      String?
+  status      ArticleStatus @default(DRAFT)
+
+  isFeatured  Boolean       @default(false)
+  isHot       Boolean       @default(false)
+  isMostRead  Boolean       @default(false)
+
+  viewCount   Int           @default(0)
+  likeCount   Int           @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  media Media[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+  @@index([publishedAt])
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  url       String
+  title     String?
+  caption   String?
+  type      MediaType @default(IMAGE)
+  sortOrder Int       @default(0)
+
+  articleId String?
+  article   Article? @relation(fields: [articleId], references: [id])
+
+  createdAt DateTime @default(now())
+}
