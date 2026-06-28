@@ -1,6 +1,6 @@
 # Website News
 
-English online newspaper built with Next.js, inspired by the layout structure of [congluan.vn](https://congluan.vn). The project includes a public news site and an admin CMS for managing categories, articles, and media.
+English online newspaper built with Next.js, inspired by the layout structure of [congluan.vn](https://congluan.vn). The project includes a public news site and an admin CMS for managing categories and articles.
 
 ## Features
 
@@ -10,7 +10,7 @@ English online newspaper built with Next.js, inspired by the layout structure of
 - **Category pages** — `/category/[slug]`
 - **Article detail** — `/article/[slug]` with cover image, block-based body (text + inline images with captions), related articles, like button
 - **Search** — `/search?q=...`
-- Only **PUBLISHED** articles appear publicly; category navigation shows **active** categories from the database (falls back to mock data if DB is unavailable)
+- Only **PUBLISHED** articles appear publicly; category navigation and footer categories come from the database
 
 ### Admin CMS
 
@@ -21,7 +21,6 @@ Protected under `/admin` (login at `/login`).
 | Dashboard | `/admin/dashboard` | Stats, status/category charts, latest & most-read articles |
 | Articles | `/admin/articles` | List, search, filter by status/category, create, edit, delete |
 | Categories | `/admin/categories` | CRUD, toggle active/inactive, slug validation |
-| Media | `/admin/media` | Media library CRUD (standalone assets, not tied to article body) |
 
 **Article editor**
 
@@ -56,7 +55,7 @@ src/
 │   ├── admin/                   # CMS (protected)
 │   └── api/
 │       ├── auth/                # login, logout, me
-│       ├── admin/               # categories, articles, media, uploads
+│       ├── admin/               # categories, articles, uploads
 │       └── public/              # home, categories, articles, search, like
 ├── components/
 │   ├── public/                  # Public layout & news UI
@@ -86,7 +85,6 @@ MySQL database name: **`website_news`** (configure via `DATABASE_URL`).
 - **User** — admin accounts
 - **Category** — name, slug, description, sortOrder, isActive
 - **Article** — title, slug, excerpt, content (JSON blocks or legacy plain text), coverImage, author, source, status, flags, viewCount, likeCount, publishedAt
-- **Media** — standalone media library entries (url, title, caption, type)
 
 Prisma client is generated to `src/generated/prisma/`.
 
@@ -196,8 +194,6 @@ Cookie name: `website_news_admin_token`
 | `/api/admin/categories/[id]` | Get / update / delete / toggle active |
 | `/api/admin/articles` | List / create articles |
 | `/api/admin/articles/[id]` | Get / update / delete article |
-| `/api/admin/media` | List / create media library items |
-| `/api/admin/media/[id]` | Get / update / delete media |
 | `/api/admin/uploads` | Upload image file |
 
 ### Public
@@ -221,7 +217,7 @@ Article body is stored in `Article.content`:
     { "type": "image", "url": "/uploads/abc.jpg", "title": "Optional", "caption": "Caption below image" }
   ]
   ```
-- **Legacy format** — plain text with `\n\n` between paragraphs; old `Media` rows linked to the article are merged when editing
+- **Legacy format** — plain text with `\n\n` between paragraphs
 
 **Cover image** (`coverImage`) is stored separately and used for cards, homepage, and the hero image on the article page — not mixed into body blocks.
 

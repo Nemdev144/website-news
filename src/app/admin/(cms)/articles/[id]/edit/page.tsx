@@ -13,10 +13,7 @@ export default async function EditArticlePage({ params }: EditArticlePageProps) 
 
   const article = await prisma.article.findUnique({
     where: { id },
-    include: {
-      category: true,
-      media: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-    },
+    include: { category: true },
   });
 
   if (!article) {
@@ -28,11 +25,6 @@ export default async function EditArticlePage({ params }: EditArticlePageProps) 
       articleId={article.id}
       redirectOnSave={false}
       initialContent={article.content}
-      initialLegacyMedia={article.media.map((item) => ({
-        url: item.url,
-        title: item.title,
-        caption: item.caption,
-      }))}
       initialValues={{
         title: article.title,
         slug: article.slug,

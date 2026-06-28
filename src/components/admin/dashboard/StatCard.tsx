@@ -13,9 +13,9 @@ const toneStyles = {
   brand: "bg-brand-50 text-brand-800 ring-brand-100",
   green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   amber: "bg-amber-50 text-amber-700 ring-amber-100",
-  blue: "bg-blue-50 text-blue-700 ring-blue-100",
-  purple: "bg-purple-50 text-purple-700 ring-purple-100",
-  neutral: "bg-neutral-100 text-neutral-700 ring-neutral-200",
+  blue: "bg-sky-50 text-sky-700 ring-sky-100",
+  purple: "bg-violet-50 text-violet-700 ring-violet-100",
+  neutral: "bg-neutral-100 text-neutral-600 ring-neutral-200",
 };
 
 export default function StatCard({
@@ -26,11 +26,13 @@ export default function StatCard({
   tone = "brand",
 }: StatCardProps) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-neutral-500">{label}</p>
-          <p className="mt-2 font-serif text-3xl font-bold tracking-tight text-neutral-900">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            {label}
+          </p>
+          <p className="mt-1.5 font-serif text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
             {value}
           </p>
           {hint && (
@@ -39,11 +41,11 @@ export default function StatCard({
         </div>
         <div
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
             toneStyles[tone],
           )}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-4 w-4" strokeWidth={2.25} />
         </div>
       </div>
     </div>

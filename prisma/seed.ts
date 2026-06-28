@@ -435,7 +435,6 @@ const articles: SeedArticle[] = [
 async function main() {
   console.log("Seeding database...");
 
-  await prisma.media.deleteMany();
   await prisma.article.deleteMany();
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();

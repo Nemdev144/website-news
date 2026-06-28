@@ -33,14 +33,6 @@ export interface Article {
 export interface ArticleDetail extends Article {
   content: string;
   source?: string | null;
-  media?: ArticleMediaItem[];
-}
-
-export interface ArticleMediaItem {
-  id: string;
-  url: string;
-  title?: string | null;
-  caption?: string | null;
 }
 
 export interface TrendingTopic {

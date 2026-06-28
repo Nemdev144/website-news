@@ -1,8 +1,16 @@
-import { categories } from "@/data/mock-news";
 import { categoryPath } from "@/lib/utils";
 import Link from "next/link";
 
-export default function Footer() {
+interface FooterCategory {
+  name: string;
+  slug: string;
+}
+
+interface FooterProps {
+  categories?: FooterCategory[];
+}
+
+export default function Footer({ categories = [] }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -18,23 +26,25 @@ export default function Footer() {
             </p>
           </div>
 
-          <div>
-            <h3 className="text-[11px] font-bold uppercase tracking-wider text-neutral-900">
-              Categories
-            </h3>
-            <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-              {categories.map((cat) => (
-                <li key={cat.slug}>
-                  <Link
-                    href={categoryPath(cat.slug)}
-                    className="text-xs text-neutral-600 transition-colors hover:text-brand-800"
-                  >
-                    {cat.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {categories.length > 0 && (
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-neutral-900">
+                Categories
+              </h3>
+              <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                {categories.map((cat) => (
+                  <li key={cat.slug}>
+                    <Link
+                      href={categoryPath(cat.slug)}
+                      className="text-xs text-neutral-600 transition-colors hover:text-brand-800"
+                    >
+                      {cat.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-neutral-900">

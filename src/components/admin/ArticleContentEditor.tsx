@@ -1,5 +1,7 @@
 "use client";
 
+import ArticleCaption from "@/components/article/ArticleCaption";
+import ArticleContentRenderer from "@/components/article/ArticleContentRenderer";
 import {
   type ContentBlock,
   type TextBlock,
@@ -10,7 +12,9 @@ import { cn } from "@/lib/utils";
 import {
   ChevronDown,
   ChevronUp,
+  Eye,
   ImagePlus,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import {
@@ -25,6 +29,7 @@ interface ArticleContentEditorProps {
   blocks: ContentBlock[];
   onChange: (blocks: ContentBlock[]) => void;
   onUploadImage?: (file: File) => Promise<string>;
+  articleTitle?: string;
 }
 
 function AutoResizeTextarea({
@@ -58,8 +63,10 @@ export default function ArticleContentEditor({
   blocks,
   onChange,
   onUploadImage,
+  articleTitle = "",
 }: ArticleContentEditorProps) {
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(true);
 
   function updateBlock(id: string, patch: Partial<ContentBlock>) {
     onChange(
@@ -196,6 +203,19 @@ export default function ArticleContentEditor({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPreview((value) => !value)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+              showPreview
+                ? "border-brand-200 bg-brand-50 text-brand-800"
+                : "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50",
+            )}
+          >
+            {showPreview ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+            {showPreview ? "Đang xem trước" : "Xem trước"}
+          </button>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand-800 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-900">
             <ImagePlus className="h-4 w-4" />
             Chèn ảnh
@@ -274,7 +294,7 @@ export default function ArticleContentEditor({
                 rows={2}
                 placeholder={
                   index === 0
-                    ? "Viết nội dung bài viết tại đây. Có thể paste ảnh hoặc URL ảnh vào đúng vị trí cần chèn..."
+                    ? "Viết nội dung bài viết tại đây. Enter = xuống đoạn mới. Enter 2 lần = cách thêm khoảng trống..."
                     : "Viết tiếp nội dung..."
                 }
                 className="min-h-16 w-full border-0 bg-transparent px-4 py-4 pr-28 text-base leading-7 outline-none placeholder:text-neutral-400"
@@ -284,6 +304,19 @@ export default function ArticleContentEditor({
                 className="px-4 py-5 pr-28"
                 onPaste={(event) => handlePaste(event, block.id)}
               >
+                {selectedImageId !== block.id && block.url ? (
+                  <div className="prose-news">
+                    <figure className="article-figure">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={block.url}
+                        alt={block.caption || articleTitle || `Image ${index + 1}`}
+                        className="article-figure-image"
+                      />
+                      {block.caption.trim() && <ArticleCaption text={block.caption} />}
+                    </figure>
+                  </div>
+                ) : (
                 <div
                   className={cn(
                     "cursor-pointer overflow-hidden rounded-lg border bg-neutral-100 transition-colors",
@@ -311,10 +344,15 @@ export default function ArticleContentEditor({
                     </span>
                   )}
                 </div>
-                {selectedImageId !== block.id && block.caption.trim() && (
-                  <p className="mt-2 rounded-lg bg-neutral-50 px-3 py-2 text-sm leading-6 text-neutral-600">
-                    {block.caption}
-                  </p>
+                )}
+                {selectedImageId !== block.id && block.url && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedImageId(block.id)}
+                    className="mt-3 text-xs font-medium text-brand-800 hover:underline"
+                  >
+                    Chỉnh sửa ảnh / ghi chú
+                  </button>
                 )}
                 {(selectedImageId === block.id || !block.url) && (
                 <div className="mt-3 space-y-3 border-t border-neutral-200 bg-neutral-50 px-3 py-3">
@@ -411,6 +449,19 @@ export default function ArticleContentEditor({
           );
         })}
       </div>
+
+      {showPreview && (
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+          <div className="border-b border-neutral-200 bg-white px-4 py-2.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Xem trước — giống trang đăng
+            </p>
+          </div>
+          <div className="prose-news bg-white px-4 py-5 sm:px-6">
+            <ArticleContentRenderer blocks={blocks} articleTitle={articleTitle} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

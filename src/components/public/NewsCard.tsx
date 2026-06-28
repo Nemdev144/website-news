@@ -1,4 +1,5 @@
 import type { Article } from "@/types/news";
+import { articleHasCover } from "@/lib/article-image";
 import {
   articleGradient,
   articlePath,
@@ -21,7 +22,10 @@ interface NewsCardProps {
     | "headline"
     | "headline-compact"
     | "mini"
-    | "stacked";
+    | "stacked"
+    | "category-grid"
+    | "category-featured"
+    | "category-row";
   showExcerpt?: boolean;
   className?: string;
 }
@@ -36,15 +40,12 @@ export function ArticleImage({
   showBadge?: boolean;
 }) {
   const initial = categoryLabel(article.category).charAt(0);
-  const hasImage =
-    article.image &&
-    article.image !== "/placeholder-news.jpg" &&
-    article.image !== "/place-news.jpg";
+  const hasImage = articleHasCover(article);
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-neutral-300",
+        "news-card-media relative overflow-hidden bg-neutral-200",
         !hasImage && `bg-gradient-to-br ${articleGradient(article.category)}`,
         className,
       )}
@@ -55,7 +56,7 @@ export function ArticleImage({
         <img
           src={article.image}
           alt={article.title}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
       ) : (
         <>
@@ -154,12 +155,21 @@ export default function NewsCard({
 
   if (variant === "stacked") {
     return (
-      <Link href={articlePath(article.slug)} className={cn("group block py-1.5", className)}>
-        <ArticleImage article={article} showBadge={false} className="aspect-[16/9] w-full" />
-        <h3 className="mt-1 line-clamp-2 font-serif text-[13px] font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
-          {article.title}
-        </h3>
-        <ArticleMeta article={article} compact />
+      <Link
+        href={articlePath(article.slug)}
+        className={cn("group flex h-full flex-col", className)}
+      >
+        <ArticleImage
+          article={article}
+          showBadge={false}
+          className="aspect-[16/10] w-full shrink-0"
+        />
+        <div className="flex min-h-0 flex-1 flex-col pt-1.5">
+          <h3 className="line-clamp-2 font-serif text-[13px] font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
+            {article.title}
+          </h3>
+          <ArticleMeta article={article} compact className="mt-auto pt-1" />
+        </div>
       </Link>
     );
   }
@@ -181,17 +191,25 @@ export default function NewsCard({
 
   if (variant === "lead") {
     return (
-      <Link href={articlePath(article.slug)} className={cn("group block", className)}>
-        <ArticleImage article={article} className="aspect-[16/9] w-full" />
-        <h3 className="mt-1.5 line-clamp-2 font-serif text-base font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
-          {article.title}
-        </h3>
-        {showExcerpt && (
-          <p className="mt-0.5 line-clamp-2 font-sans text-[11px] leading-relaxed text-neutral-600">
-            {article.excerpt}
+      <Link
+        href={articlePath(article.slug)}
+        className={cn("group flex h-full flex-col", className)}
+      >
+        <ArticleImage article={article} className="aspect-[16/10] w-full shrink-0" />
+        <div className="flex flex-1 flex-col pt-2">
+          <h3 className="line-clamp-2 font-serif text-base font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
+            {article.title}
+          </h3>
+          <p
+            className={cn(
+              "mt-1 line-clamp-2 min-h-[2.5rem] font-sans text-[11px] leading-relaxed text-neutral-600",
+              !showExcerpt && "invisible",
+            )}
+          >
+            {showExcerpt && article.excerpt ? article.excerpt : "\u00A0"}
           </p>
-        )}
-        <ArticleMeta article={article} />
+          <ArticleMeta article={article} className="mt-auto pt-2" />
+        </div>
       </Link>
     );
   }
@@ -200,11 +218,15 @@ export default function NewsCard({
     return (
       <Link
         href={articlePath(article.slug)}
-        className={cn("group relative block overflow-hidden", className)}
+        className={cn("group relative block h-full min-h-[220px] overflow-hidden", className)}
       >
-        <ArticleImage article={article} showBadge={false} className="h-full w-full" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 p-2.5 sm:p-3">
+        <ArticleImage
+          article={article}
+          showBadge={false}
+          className="absolute inset-0 h-full w-full"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3">
           <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-brand-200">
             {categoryLabel(article.category)}
           </span>
@@ -212,7 +234,7 @@ export default function NewsCard({
             {article.title}
           </h3>
           {showExcerpt && (
-            <p className="mt-0.5 line-clamp-1 font-sans text-[11px] text-neutral-300">
+            <p className="mt-0.5 line-clamp-2 font-sans text-[11px] leading-relaxed text-neutral-300">
               {article.excerpt}
             </p>
           )}
@@ -257,21 +279,104 @@ export default function NewsCard({
     );
   }
 
+  if (variant === "category-grid") {
+    return (
+      <Link
+        href={articlePath(article.slug)}
+        className={cn(
+          "group flex h-full flex-col gap-1.5 rounded-sm border border-neutral-200 bg-white p-2 transition-colors hover:border-neutral-300 hover:shadow-sm",
+          className,
+        )}
+      >
+        <ArticleImage
+          article={article}
+          showBadge={false}
+          className="aspect-[3/2] w-full shrink-0 rounded-sm"
+        />
+        <h3 className="line-clamp-2 font-serif text-[13px] font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
+          {article.title}
+        </h3>
+        <ArticleMeta article={article} compact className="mt-auto" />
+      </Link>
+    );
+  }
+
+  if (variant === "category-featured") {
+    return (
+      <Link
+        href={articlePath(article.slug)}
+        className={cn(
+          "group flex gap-3 rounded-sm border border-neutral-200 bg-white p-3 transition-colors hover:border-neutral-300 hover:shadow-sm sm:gap-4",
+          className,
+        )}
+      >
+        <ArticleImage
+          article={article}
+          showBadge={false}
+          className="h-[72px] w-[108px] shrink-0 rounded-sm sm:h-20 sm:w-32"
+        />
+        <div className="min-w-0 flex-1">
+          <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-brand-800">
+            Featured
+          </span>
+          <h2 className="mt-0.5 line-clamp-2 font-serif text-base font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800 sm:text-lg">
+            {article.title}
+          </h2>
+          {showExcerpt && article.excerpt && (
+            <p className="mt-1 line-clamp-2 font-sans text-xs leading-relaxed text-neutral-600">
+              {article.excerpt}
+            </p>
+          )}
+          <ArticleMeta article={article} compact className="mt-1.5" />
+        </div>
+      </Link>
+    );
+  }
+
+  if (variant === "category-row") {
+    return (
+      <Link
+        href={articlePath(article.slug)}
+        className={cn(
+          "group flex gap-2.5 border-b border-neutral-100 py-2 last:border-0",
+          className,
+        )}
+      >
+        <ArticleImage
+          article={article}
+          showBadge={false}
+          className="h-14 w-[4.5rem] shrink-0 rounded-sm"
+        />
+        <div className="min-w-0 flex-1">
+          <h3 className="line-clamp-2 font-serif text-[13px] font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
+            {article.title}
+          </h3>
+          <ArticleMeta article={article} compact className="mt-0.5" />
+        </div>
+      </Link>
+    );
+  }
+
   return (
-    <Link href={articlePath(article.slug)} className={cn("group block", className)}>
-      <ArticleImage article={article} className="aspect-[16/10] w-full" />
-      <span className="mt-1.5 inline-block font-sans text-[10px] font-bold uppercase tracking-wider text-brand-800">
-        {categoryLabel(article.category)}
-      </span>
-      <h3 className="line-clamp-2 font-serif text-sm font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
-        {article.title}
-      </h3>
-      {showExcerpt && (
-        <p className="mt-0.5 line-clamp-2 font-sans text-xs leading-relaxed text-neutral-600">
-          {article.excerpt}
+    <Link href={articlePath(article.slug)} className={cn("group flex h-full flex-col", className)}>
+      <ArticleImage article={article} className="aspect-[16/10] w-full shrink-0" />
+      <div className="flex flex-1 flex-col pt-2">
+        <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-brand-800">
+          {categoryLabel(article.category)}
+        </span>
+        <h3 className="mt-0.5 line-clamp-2 font-serif text-sm font-bold leading-snug text-neutral-900 transition-colors group-hover:text-brand-800">
+          {article.title}
+        </h3>
+        <p
+          className={cn(
+            "mt-1 line-clamp-2 min-h-[2.5rem] font-sans text-xs leading-relaxed text-neutral-600",
+            !showExcerpt && "invisible",
+          )}
+        >
+          {showExcerpt && article.excerpt ? article.excerpt : "\u00A0"}
         </p>
-      )}
-      <ArticleMeta article={article} />
+        <ArticleMeta article={article} className="mt-auto pt-1" />
+      </div>
     </Link>
   );
 }
@@ -280,10 +385,12 @@ function ArticleMeta({
   article,
   light = false,
   compact = false,
+  className,
 }: {
   article: Article;
   light?: boolean;
   compact?: boolean;
+  className?: string;
 }) {
   const textClass = light ? "text-neutral-400" : "text-neutral-400";
 
@@ -291,8 +398,9 @@ function ArticleMeta({
     <div
       className={cn(
         "flex flex-wrap items-center gap-x-1.5 font-sans",
-        compact ? "mt-0.5 text-[10px]" : "mt-1 text-[10px]",
+        compact ? "mt-0.5 text-[10px]" : "text-[10px]",
         textClass,
+        className,
       )}
     >
       <span>{article.author}</span>

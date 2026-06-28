@@ -1,7 +1,7 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn, formatViewCount } from "@/lib/utils";
 
 interface ArticleLikeButtonProps {
@@ -15,11 +15,12 @@ export default function ArticleLikeButton({
 }: ArticleLikeButtonProps) {
   const storageKey = `liked-article:${slug}`;
   const [likeCount, setLikeCount] = useState(initialLikeCount);
-  const [liked, setLiked] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(storageKey) === "true";
-  });
+  const [liked, setLiked] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setLiked(localStorage.getItem(storageKey) === "true");
+  }, [storageKey]);
 
   async function handleLike() {
     if (liked || saving) return;

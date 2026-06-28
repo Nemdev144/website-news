@@ -29,12 +29,6 @@ export function createImageBlock(): ImageBlock {
   return { id: createBlockId(), type: "image", url: "", title: "", caption: "" };
 }
 
-interface LegacyMediaItem {
-  url: string;
-  title?: string | null;
-  caption?: string | null;
-}
-
 type StoredBlock =
   | { type: "text"; value: string }
   | { type: "image"; url: string; title?: string; caption?: string };
@@ -65,10 +59,77 @@ function withId(block: StoredBlock): ContentBlock {
   };
 }
 
-export function parseArticleContent(
-  raw: string,
-  legacyMedia: LegacyMediaItem[] = [],
-): ContentBlock[] {
+export type ArticleTextSegment =
+  | { type: "paragraph"; text: string }
+  | { type: "gap"; size: "normal" | "wide" };
+
+function normalizeTextBlockValue(value: string): string {
+  return value
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\u2028/g, "\n")
+    .replace(/\u2029/g, "\n")
+    .replace(/^\s+|\s+$/g, "");
+}
+
+export function splitTextIntoSegments(text: string): ArticleTextSegment[] {
+  const normalized = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\u2028/g, "\n")
+    .replace(/\u2029/g, "\n");
+
+  if (!normalized.trim()) return [];
+
+  const lines = normalized.split("\n");
+  const segments: ArticleTextSegment[] = [];
+  let blankLineCount = 0;
+  let currentLine: string | null = null;
+
+  function flushParagraph() {
+    if (!currentLine) return;
+    segments.push({ type: "paragraph", text: currentLine.trim() });
+    currentLine = null;
+  }
+
+  function flushBlankLines() {
+    if (blankLineCount <= 0) return;
+
+    segments.push({ type: "gap", size: "normal" });
+    for (let index = 1; index < blankLineCount; index += 1) {
+      segments.push({ type: "gap", size: "wide" });
+    }
+    blankLineCount = 0;
+  }
+
+  for (const line of lines) {
+    if (line.trim() === "") {
+      flushParagraph();
+      blankLineCount += 1;
+      continue;
+    }
+
+    flushBlankLines();
+
+    if (currentLine !== null) {
+      flushParagraph();
+    }
+
+    currentLine = line;
+  }
+
+  flushParagraph();
+
+  return segments;
+}
+
+export function splitTextIntoParagraphs(text: string): string[] {
+  return splitTextIntoSegments(text)
+    .filter((segment): segment is { type: "paragraph"; text: string } => segment.type === "paragraph")
+    .map((segment) => segment.text);
+}
+
+export function parseArticleContent(raw: string): ContentBlock[] {
   const trimmed = raw.trim();
 
   if (trimmed.startsWith("[")) {
@@ -85,24 +146,10 @@ export function parseArticleContent(
   const blocks: ContentBlock[] = [];
 
   if (trimmed) {
-    trimmed
-      .split(/\n{2,}/)
-      .map((paragraph) => paragraph.trim())
-      .filter(Boolean)
-      .forEach((paragraph) => {
-        blocks.push(createTextBlock(paragraph));
-      });
-  }
-
-  legacyMedia.forEach((item) => {
-    blocks.push({
-      id: createBlockId(),
-      type: "image",
-      url: item.url,
-      title: item.title ?? "",
-      caption: item.caption ?? "",
+    splitTextIntoParagraphs(trimmed).forEach((paragraph) => {
+      blocks.push(createTextBlock(paragraph));
     });
-  });
+  }
 
   if (blocks.length === 0) {
     blocks.push(createTextBlock());
@@ -115,7 +162,7 @@ export function serializeArticleContent(blocks: ContentBlock[]): string {
   const normalized = blocks
     .map((block) => {
       if (block.type === "text") {
-        return { type: "text" as const, value: block.value.trim() };
+        return { type: "text" as const, value: normalizeTextBlockValue(block.value) };
       }
       return {
         type: "image" as const,

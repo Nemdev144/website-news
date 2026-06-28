@@ -2,9 +2,10 @@ import CategoryNav from "@/components/public/CategoryNav";
 import Footer from "@/components/public/Footer";
 import Header from "@/components/public/Header";
 import HotNewsBar from "@/components/public/HotNewsBar";
+import ScrollToTop from "@/components/public/ScrollToTop";
 import TopBar from "@/components/public/TopBar";
-import { categories as mockCategories, getHotArticles } from "@/data/mock-news";
-import { fetchActiveCategoriesForNav } from "@/lib/public-articles";
+import { mapArticlesToPublic } from "@/lib/article-mapper";
+import { fetchActiveCategoriesForNav, fetchHotArticles } from "@/lib/public-articles";
 import type { Article } from "@/types/news";
 import type { ReactNode } from "react";
 
@@ -19,24 +20,26 @@ export default async function PublicShell({
   showHotBar = true,
   hotArticles,
 }: PublicShellProps) {
-  const hot = hotArticles ?? getHotArticles();
-  let navCategories: { name: string; slug: string; description: string }[] =
-    mockCategories.map((category) => ({
-      name: category.name,
-      slug: category.slug,
-      description: category.description,
-    }));
+  let hot: Article[] = hotArticles ?? [];
+
+  if (!hotArticles) {
+    try {
+      hot = mapArticlesToPublic(await fetchHotArticles());
+    } catch {
+      hot = [];
+    }
+  }
+
+  let navCategories: { name: string; slug: string; description: string }[] = [];
   try {
     const rows = await fetchActiveCategoriesForNav();
-    if (rows.length > 0) {
-      navCategories = rows.map((row) => ({
-        name: row.name,
-        slug: row.slug,
-        description: row.description ?? "",
-      }));
-    }
+    navCategories = rows.map((row) => ({
+      name: row.name,
+      slug: row.slug,
+      description: row.description ?? "",
+    }));
   } catch {
-    // Fall back to mock categories when the database is unavailable.
+    navCategories = [];
   }
 
   return (
@@ -46,7 +49,8 @@ export default async function PublicShell({
       <CategoryNav categories={navCategories} />
       {showHotBar && <HotNewsBar articles={hot} />}
       {children}
-      <Footer />
+      <Footer categories={navCategories} />
+      <ScrollToTop />
     </div>
   );
 }

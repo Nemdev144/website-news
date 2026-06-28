@@ -1,10 +1,11 @@
 import { ArticleStatus } from "@/generated/prisma/client";
 import ArticleRankList from "@/components/admin/dashboard/ArticleRankList";
 import StatCard from "@/components/admin/dashboard/StatCard";
+import AdminPageHeader from "@/components/admin/ui/AdminPageHeader";
+import { AdminButtonLink } from "@/components/admin/ui/AdminButton";
 import { prisma } from "@/lib/prisma";
 import { formatViewCount } from "@/lib/utils";
-import { Eye, FileText, PenLine, TrendingUp } from "lucide-react";
-import Link from "next/link";
+import { Eye, FileText, PenLine, Plus, TrendingUp } from "lucide-react";
 
 function startOfWeek(): Date {
   const now = new Date();
@@ -58,66 +59,57 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-serif text-xl font-bold text-neutral-900">
-            Tổng quan nhanh
-          </h2>
-          <p className="mt-1 text-sm text-neutral-600">
-            Các số liệu chính để theo dõi bài viết và lượt xem.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/articles/new"
-            className="rounded-lg bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-900"
-          >
-            New Article
-          </Link>
-          <Link
-            href="/admin/articles"
-            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-          >
-            Manage Articles
-          </Link>
-        </div>
-      </section>
+      <AdminPageHeader
+        title="Tổng quan"
+        description="Theo dõi bài viết, lượt xem và hoạt động xuất bản."
+        actions={
+          <>
+            <AdminButtonLink href="/admin/articles/new" variant="primary">
+              <Plus className="h-4 w-4" />
+              Viết bài mới
+            </AdminButtonLink>
+            <AdminButtonLink href="/admin/articles" variant="secondary">
+              Quản lý bài viết
+            </AdminButtonLink>
+          </>
+        }
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Total Articles"
+          label="Tổng bài viết"
           value={totalArticles}
-          hint={`${publishRate}% published`}
+          hint={`${publishRate}% đã xuất bản`}
           icon={FileText}
           tone="brand"
         />
         <StatCard
-          label="Published"
+          label="Đã xuất bản"
           value={publishedArticles}
-          hint={`${publishedThisWeek} this week`}
+          hint={`${publishedThisWeek} bài tuần này`}
           icon={TrendingUp}
           tone="green"
         />
         <StatCard
-          label="Drafts"
+          label="Bản nháp"
           value={draftArticles}
-          hint="Need editing or review"
+          hint="Cần chỉnh sửa hoặc duyệt"
           icon={PenLine}
           tone="amber"
         />
         <StatCard
-          label="Total Views"
+          label="Lượt xem"
           value={formatViewCount(totalViews)}
-          hint="All-time article views"
+          hint="Tổng tất cả bài viết"
           icon={Eye}
           tone="blue"
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <ArticleRankList
-          title="Latest Articles"
-          subtitle="Most recently created or updated"
+          title="Bài viết mới nhất"
+          subtitle="Mới tạo hoặc cập nhật gần đây"
           variant="latest"
           items={latestArticles.map((article) => ({
             id: article.id,
@@ -128,8 +120,8 @@ export default async function AdminDashboardPage() {
           }))}
         />
         <ArticleRankList
-          title="Most Read"
-          subtitle="Top articles by view count"
+          title="Đọc nhiều nhất"
+          subtitle="Xếp theo lượt xem"
           variant="mostRead"
           items={mostReadArticles.map((article) => ({
             id: article.id,

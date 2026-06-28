@@ -20,8 +20,21 @@ export function fetchHomeData(): Promise<HomePayload | null> {
   return fetchJson<HomePayload>("/api/public/home");
 }
 
-export function fetchCategoryData(slug: string): Promise<CategoryPayload | null> {
-  return fetchJson<CategoryPayload>(`/api/public/categories/${slug}`);
+export function fetchCategoryData(
+  slug: string,
+  options?: { page?: number; limit?: number },
+): Promise<CategoryPayload | null> {
+  const params = new URLSearchParams();
+  if (options?.page && options.page > 1) {
+    params.set("page", String(options.page));
+  }
+  if (options?.limit) {
+    params.set("limit", String(options.limit));
+  }
+  const query = params.toString();
+  return fetchJson<CategoryPayload>(
+    `/api/public/categories/${slug}${query ? `?${query}` : ""}`,
+  );
 }
 
 export function fetchArticleData(

@@ -2,7 +2,6 @@ import { ArticleStatus } from "@/generated/prisma/client";
 import { NextResponse } from "next/server";
 import { isUnauthorized, requireAdmin } from "@/lib/admin-api";
 import { contentBlocksAreValid, parseArticleContent } from "@/lib/article-blocks";
-import { syncArticleMedia } from "@/lib/article-media";
 import { generateSlug } from "@/lib/slug";
 import { prisma } from "@/lib/prisma";
 
@@ -150,17 +149,7 @@ export async function POST(request: Request) {
       include: { category: true },
     });
 
-    await syncArticleMedia(article.id, []);
-
-    const articleWithMedia = await prisma.article.findUnique({
-      where: { id: article.id },
-      include: {
-        category: true,
-        media: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-      },
-    });
-
-    return NextResponse.json({ article: articleWithMedia }, { status: 201 });
+    return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
     console.error("[api/admin/articles POST]", error);
     return NextResponse.json(

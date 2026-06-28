@@ -1,6 +1,7 @@
 "use client";
 
 import AdminToast from "@/components/admin/AdminToast";
+import { adminInputClassName } from "@/components/admin/ui/AdminButton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState, Suspense } from "react";
 
@@ -27,7 +28,7 @@ function LoginForm() {
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setError(data.error ?? "Login failed");
+        setError(data.error ?? "Đăng nhập thất bại");
         return;
       }
 
@@ -35,72 +36,82 @@ function LoginForm() {
       router.push(from?.startsWith("/admin") ? from : "/admin");
       router.refresh();
     } catch {
-      setError("Unable to connect. Please try again.");
+      setError("Không kết nối được. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-100 px-4">
-      <div className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-8 shadow-sm">
-        <div className="mb-8 text-center">
-          <h1 className="font-serif text-2xl font-bold text-neutral-900">
+    <div className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 py-8">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-900/30 via-neutral-950 to-neutral-950" />
+
+      <div className="relative w-full max-w-sm">
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-800 font-serif text-lg font-bold text-white shadow-lg shadow-brand-900/30">
+            WN
+          </div>
+          <h1 className="font-serif text-2xl font-bold text-white">
             Website News
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">Admin sign in</p>
+          <p className="mt-1 text-sm text-neutral-400">Đăng nhập quản trị</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl border border-white/10 bg-white p-6 shadow-2xl"
+        >
           <AdminToast
             message={error}
             type="error"
             onDismiss={() => setError("")}
           />
 
-          <div>
-            <label
-              htmlFor="username"
-              className="mb-1 block text-sm font-medium text-neutral-700"
-            >
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              required
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-brand-800 focus:ring-1 focus:ring-brand-800"
-            />
-          </div>
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="username"
+                className="mb-1.5 block text-sm font-medium text-neutral-700"
+              >
+                Tên đăng nhập
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                required
+                className={adminInputClassName()}
+              />
+            </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-neutral-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-brand-800 focus:ring-1 focus:ring-brand-800"
-            />
-          </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-sm font-medium text-neutral-700"
+              >
+                Mật khẩu
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                className={adminInputClassName()}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-900 disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-900 disabled:opacity-50"
+            >
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -111,8 +122,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-neutral-100">
-          <p className="text-sm text-neutral-500">Loading...</p>
+        <div className="flex min-h-screen items-center justify-center bg-neutral-950">
+          <p className="text-sm text-neutral-400">Đang tải...</p>
         </div>
       }
     >

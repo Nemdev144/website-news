@@ -1,6 +1,5 @@
 import { ArticleStatus } from "@/generated/prisma/client";
 import {
-  MAIN_CATEGORY_SLUGS,
   mapArticleToDetail,
   mapArticleToPublic,
   mapArticlesToMultimediaItems,
@@ -106,13 +105,7 @@ export async function fetchArticlesByCategorySlug(slug: string, limit?: number) 
 export async function fetchArticleBySlug(slug: string) {
   return prisma.article.findFirst({
     where: { slug, status: ArticleStatus.PUBLISHED },
-    include: {
-      category: true,
-      media: {
-        where: { type: "IMAGE" },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-    },
+    include: articleInclude,
   });
 }
 
@@ -156,6 +149,33 @@ export async function incrementArticleViewCount(id: string) {
   });
 }
 
+async function fetchHomeCategorySections(limitPerCategory = 12) {
+  const categories = await prisma.category.findMany({
+    where: {
+      isActive: true,
+      slug: { not: "multimedia" },
+      articles: {
+        some: { status: ArticleStatus.PUBLISHED },
+      },
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { slug: true, name: true },
+  });
+
+  const sections = await Promise.all(
+    categories.map(async (category) => {
+      const rows = await fetchArticlesByCategorySlug(category.slug, limitPerCategory);
+      return {
+        category: category.slug,
+        categoryName: category.name,
+        articles: mapArticlesToPublic(rows),
+      };
+    }),
+  );
+
+  return sections.filter((section) => section.articles.length > 0);
+}
+
 export async function getHomePayload() {
   const [
     featuredRows,
@@ -173,15 +193,7 @@ export async function getHomePayload() {
     fetchMultimediaArticles(6),
   ]);
 
-  const categorySections = await Promise.all(
-    MAIN_CATEGORY_SLUGS.map(async (slug) => {
-      const rows = await fetchArticlesByCategorySlug(slug, 6);
-      return {
-        category: slug,
-        articles: mapArticlesToPublic(rows),
-      };
-    }),
-  );
+  const categorySections = await fetchHomeCategorySections(12);
 
   return {
     featuredArticles: mapArticlesToPublic(featuredRows),
@@ -194,9 +206,17 @@ export async function getHomePayload() {
   };
 }
 
-export async function getCategoryPayload(slug: string) {
+const DEFAULT_CATEGORY_PAGE_SIZE = 18;
+
+export async function getCategoryPayload(
+  slug: string,
+  options?: { page?: number; limit?: number },
+) {
   const categoryRow = await fetchCategoryBySlug(slug);
   if (!categoryRow) return null;
+
+  const page = Math.max(options?.page ?? 1, 1);
+  const limit = Math.min(Math.max(options?.limit ?? DEFAULT_CATEGORY_PAGE_SIZE, 1), 48);
 
   const [articleRows, mostReadRows, editorRows] = await Promise.all([
     fetchArticlesByCategorySlug(slug),
@@ -214,10 +234,24 @@ export async function getCategoryPayload(slug: string) {
     ? articles.filter((a) => a.id !== featuredArticle?.id)
     : articles;
 
+  const total = articleRows.length;
+  const listTotal = listArticles.length;
+  const totalPages = Math.max(1, Math.ceil(listTotal / limit));
+  const safePage = Math.min(page, totalPages);
+  const skip = (safePage - 1) * limit;
+  const paginatedArticles = listArticles.slice(skip, skip + limit);
+
   return {
     category: mapCategoryToPublic(categoryRow),
-    featuredArticle,
-    articles: listArticles,
+    featuredArticle: safePage === 1 ? featuredArticle : null,
+    articles: paginatedArticles,
+    pagination: {
+      page: safePage,
+      limit,
+      total,
+      listTotal,
+      totalPages,
+    },
     mostReadArticles: mapArticlesToPublic(mostReadRows),
     editorPicks: mapArticlesToPublic(editorRows),
   };

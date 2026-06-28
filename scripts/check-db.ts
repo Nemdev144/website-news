@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createPrismaClient } from "../src/lib/prisma";
 
-const EXPECTED_TABLES = ["user", "category", "article", "media"] as const;
+const EXPECTED_TABLES = ["user", "category", "article"] as const;
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -31,18 +31,16 @@ async function main() {
       process.exit(1);
     }
 
-    const [users, categories, articles, media] = await Promise.all([
+    const [users, categories, articles] = await Promise.all([
       prisma.user.count(),
       prisma.category.count(),
       prisma.article.count(),
-      prisma.media.count(),
     ]);
 
     console.log("Row counts:");
     console.log(`  User:     ${users}`);
     console.log(`  Category: ${categories}`);
     console.log(`  Article:  ${articles}`);
-    console.log(`  Media:    ${media}`);
     console.log("\n✅ Database is ready.");
   } catch (error) {
     console.error("❌ Database check failed:");

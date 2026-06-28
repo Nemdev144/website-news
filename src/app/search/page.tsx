@@ -4,8 +4,8 @@ import PageSidebar from "@/components/public/PageSidebar";
 import PublicShell from "@/components/public/PublicShell";
 import SearchForm from "@/components/public/SearchForm";
 import { fetchSearchData } from "@/lib/api-fetch";
-import { getMockSearchPayload } from "@/lib/mock-fallback";
-import { getMostReadArticles } from "@/data/mock-news";
+import { mapArticlesToPublic } from "@/lib/article-mapper";
+import { fetchMostReadArticles } from "@/lib/public-articles";
 import type { Metadata } from "next";
 
 interface SearchPageProps {
@@ -24,10 +24,15 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
-  const apiData = query ? await fetchSearchData(query) : null;
-  const data = apiData ?? (query ? getMockSearchPayload(query) : null);
+  const data = query ? await fetchSearchData(query) : null;
   const results = data?.results ?? [];
-  const mostReadArticles = getMostReadArticles(8);
+
+  let mostReadArticles: Awaited<ReturnType<typeof mapArticlesToPublic>> = [];
+  try {
+    mostReadArticles = mapArticlesToPublic(await fetchMostReadArticles(8));
+  } catch {
+    mostReadArticles = [];
+  }
 
   return (
     <PublicShell showHotBar={false}>

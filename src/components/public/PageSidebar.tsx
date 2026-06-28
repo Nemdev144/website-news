@@ -1,7 +1,6 @@
 import EditorsPicks from "@/components/public/EditorsPicks";
 import MostRead from "@/components/public/MostRead";
 import NewsletterSidebar from "@/components/public/NewsletterSidebar";
-import { getEditorsPicks, getMostReadArticles } from "@/data/mock-news";
 import type { Article } from "@/types/news";
 
 interface PageSidebarProps {
@@ -18,16 +17,18 @@ export default function PageSidebar({
   editorsLimit = 5,
   showNewsletter = true,
   showEditorsPicks = true,
-  mostReadArticles,
-  editorPicksArticles,
+  mostReadArticles = [],
+  editorPicksArticles = [],
 }: PageSidebarProps) {
-  const mostRead = mostReadArticles ?? getMostReadArticles(10);
-  const editorsPicks = editorPicksArticles ?? getEditorsPicks(editorsLimit);
+  const mostRead = mostReadArticles.slice(0, mostReadLimit);
+  const editorsPicks = editorPicksArticles.slice(0, editorsLimit);
 
   return (
     <div className="space-y-2 lg:sticky lg:top-[88px]">
-      <MostRead articles={mostRead} limit={mostReadLimit} />
-      {showEditorsPicks && <EditorsPicks articles={editorsPicks} />}
+      {mostRead.length > 0 && <MostRead articles={mostRead} limit={mostReadLimit} />}
+      {showEditorsPicks && editorsPicks.length > 0 && (
+        <EditorsPicks articles={editorsPicks} />
+      )}
       {showNewsletter && <NewsletterSidebar />}
     </div>
   );

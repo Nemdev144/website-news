@@ -1,9 +1,18 @@
 "use client";
 
+import AdminConfirmDialog from "@/components/admin/AdminConfirmDialog";
 import AdminToast from "@/components/admin/AdminToast";
+import AdminBadge from "@/components/admin/ui/AdminBadge";
+import { AdminButtonLink } from "@/components/admin/ui/AdminButton";
+import AdminEmptyState from "@/components/admin/ui/AdminEmptyState";
+import AdminPageHeader from "@/components/admin/ui/AdminPageHeader";
+import AdminPagination from "@/components/admin/ui/AdminPagination";
+import AdminPanel from "@/components/admin/ui/AdminPanel";
+import { adminInputClassName, adminSelectClassName } from "@/components/admin/ui/AdminButton";
+import { articleStatusLabel } from "@/lib/admin-labels";
 import { ARTICLE_STATUSES, ArticleStatus } from "@/types/cms";
-import { cn, formatShortDate, formatViewCount } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { formatShortDate, formatViewCount } from "@/lib/utils";
+import { FileText, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -35,6 +44,12 @@ interface ArticlePagination {
 
 const ARTICLES_PER_PAGE = 10;
 
+function statusTone(status: ArticleStatus) {
+  if (status === ArticleStatus.PUBLISHED) return "green" as const;
+  if (status === ArticleStatus.DRAFT) return "amber" as const;
+  return "neutral" as const;
+}
+
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -50,6 +65,8 @@ export default function AdminArticlesPage() {
     total: 0,
     totalPages: 1,
   });
+  const [deleteTarget, setDeleteTarget] = useState<ArticleRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,9 +78,7 @@ export default function AdminArticlesPage() {
           setCategories(data.categories ?? []);
         }
       })
-      .catch(() => {
-        // Categories filter is optional; ignore load failures here.
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
@@ -91,7 +106,7 @@ export default function AdminArticlesPage() {
       .then(({ response, data }) => {
         if (cancelled) return;
         if (!response.ok) {
-          setError(data.error ?? "Failed to load articles");
+          setError(data.error ?? "Không tải được danh sách bài viết");
           return;
         }
         setError("");
@@ -107,7 +122,7 @@ export default function AdminArticlesPage() {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Failed to load articles");
+          setError("Không tải được danh sách bài viết");
         }
       })
       .finally(() => {
@@ -139,7 +154,7 @@ export default function AdminArticlesPage() {
         error?: string;
       };
       if (!response.ok) {
-        setError(data.error ?? "Failed to load articles");
+        setError(data.error ?? "Không tải được danh sách bài viết");
         return;
       }
       setArticles(data.articles ?? []);
@@ -152,92 +167,94 @@ export default function AdminArticlesPage() {
         },
       );
     } catch {
-      setError("Failed to load articles");
+      setError("Không tải được danh sách bài viết");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleDelete(article: ArticleRow) {
-    if (!window.confirm(`Delete "${article.title}"? This cannot be undone.`)) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteTarget) return;
 
+    setDeleting(true);
     try {
-      const response = await fetch(`/api/admin/articles/${article.id}`, {
+      const response = await fetch(`/api/admin/articles/${deleteTarget.id}`, {
         method: "DELETE",
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setError(data.error ?? "Failed to delete article");
+        setError(data.error ?? "Không xóa được bài viết");
         return;
       }
+      setDeleteTarget(null);
       await reloadArticles();
     } catch {
-      setError("Failed to delete article");
+      setError("Không xóa được bài viết");
+    } finally {
+      setDeleting(false);
     }
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-neutral-600">
-          Create, edit, and publish news articles.
-        </p>
-        <Link
-          href="/admin/articles/new"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-900"
-        >
-          <Plus className="h-4 w-4" />
-          New Article
-        </Link>
-      </div>
+      <AdminPageHeader
+        title="Bài viết"
+        description="Tạo, chỉnh sửa và xuất bản tin tức."
+        actions={
+          <AdminButtonLink href="/admin/articles/new" variant="primary">
+            <Plus className="h-4 w-4" />
+            Viết bài mới
+          </AdminButtonLink>
+        }
+      />
 
-      <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-          <input
-            type="text"
-            placeholder="Search by title..."
-            value={search}
+      <AdminPanel padding="sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Tìm theo tiêu đề..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className={adminInputClassName("pl-9")}
+            />
+          </div>
+          <select
+            value={statusFilter}
             onChange={(e) => {
-              setSearch(e.target.value);
+              setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-lg border border-neutral-300 py-2 pl-9 pr-3 text-sm"
-          />
+            className={adminSelectClassName("sm:w-40")}
+          >
+            <option value="">Mọi trạng thái</option>
+            {ARTICLE_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {articleStatusLabel(status)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setPage(1);
+            }}
+            className={adminSelectClassName("sm:w-44")}
+          >
+            <option value="">Mọi danh mục</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value);
-            setPage(1);
-          }}
-          className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-        >
-          <option value="">All statuses</option>
-          {ARTICLE_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-        <select
-          value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value);
-            setPage(1);
-          }}
-          className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-        >
-          <option value="">All categories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      </AdminPanel>
 
       <AdminToast
         message={error}
@@ -245,33 +262,50 @@ export default function AdminArticlesPage() {
         onDismiss={() => setError("")}
       />
 
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-        {loading ? (
-          <p className="p-6 text-sm text-neutral-500">Loading articles...</p>
-        ) : articles.length === 0 ? (
-          <p className="p-6 text-sm text-neutral-500">No articles found.</p>
+      <AdminPanel>
+        {loading || articles.length === 0 ? (
+          <AdminEmptyState
+            loading={loading}
+            icon={FileText}
+            message={
+              loading
+                ? "Đang tải bài viết..."
+                : "Không tìm thấy bài viết nào."
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Title</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Published</th>
-                  <th className="px-4 py-3 font-medium">Views</th>
-                  <th className="px-4 py-3 font-medium">Flags</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+            <table className="admin-table w-full min-w-[860px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 font-medium">Tiêu đề</th>
+                  <th className="hidden px-4 py-3 font-medium md:table-cell">
+                    Danh mục
+                  </th>
+                  <th className="px-4 py-3 font-medium">Trạng thái</th>
+                  <th className="hidden px-4 py-3 font-medium lg:table-cell">
+                    Ngày đăng
+                  </th>
+                  <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                    Lượt xem
+                  </th>
+                  <th className="hidden px-4 py-3 font-medium xl:table-cell">
+                    Nhãn
+                  </th>
+                  <th className="px-4 py-3 font-medium text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody className="divide-y divide-neutral-50">
                 {articles.map((article) => (
-                  <tr key={article.id} className="hover:bg-neutral-50">
-                    <td className="max-w-sm px-4 py-3">
+                  <tr
+                    key={article.id}
+                    className="transition-colors hover:bg-neutral-50/80"
+                  >
+                    <td className="max-w-xs px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Link
                           href={`/admin/articles/${article.id}/edit`}
-                          className="block h-14 w-20 shrink-0 overflow-hidden rounded-md border border-neutral-200 bg-neutral-100"
+                          className="block h-12 w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100"
                           title={article.title}
                         >
                           {article.coverImage ? (
@@ -282,78 +316,67 @@ export default function AdminArticlesPage() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="flex h-full w-full items-center justify-center px-2 text-center text-[10px] font-medium uppercase text-neutral-400">
-                              No image
+                            <span className="flex h-full w-full items-center justify-center text-[9px] font-medium uppercase text-neutral-400">
+                              —
                             </span>
                           )}
                         </Link>
-                        <Link
-                          href={`/admin/articles/${article.id}/edit`}
-                          className="line-clamp-2 font-medium text-neutral-900 hover:text-brand-800"
-                        >
-                          {article.title}
-                        </Link>
+                        <div className="min-w-0">
+                          <Link
+                            href={`/admin/articles/${article.id}/edit`}
+                            className="line-clamp-2 font-medium text-neutral-900 hover:text-brand-800"
+                          >
+                            {article.title}
+                          </Link>
+                          <p className="mt-0.5 text-xs text-neutral-400 md:hidden">
+                            {article.category.name}
+                          </p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-neutral-600">
+                    <td className="hidden px-4 py-3 text-neutral-600 md:table-cell">
                       {article.category.name}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium",
-                          article.status === ArticleStatus.PUBLISHED &&
-                            "bg-green-100 text-green-800",
-                          article.status === ArticleStatus.DRAFT &&
-                            "bg-amber-100 text-amber-800",
-                          article.status === ArticleStatus.ARCHIVED &&
-                            "bg-neutral-200 text-neutral-600",
-                        )}
-                      >
-                        {article.status}
-                      </span>
+                      <AdminBadge tone={statusTone(article.status)}>
+                        {articleStatusLabel(article.status)}
+                      </AdminBadge>
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">
+                    <td className="hidden px-4 py-3 text-neutral-500 lg:table-cell">
                       {article.publishedAt
                         ? formatShortDate(article.publishedAt)
                         : "—"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 tabular-nums text-neutral-600 sm:table-cell">
                       {formatViewCount(article.viewCount)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 xl:table-cell">
                       <div className="flex flex-wrap gap-1">
                         {article.isFeatured && (
-                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800">
-                            Featured
-                          </span>
+                          <AdminBadge tone="blue">Nổi bật</AdminBadge>
                         )}
                         {article.isHot && (
-                          <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-800">
-                            Hot
-                          </span>
+                          <AdminBadge tone="red">Nóng</AdminBadge>
                         )}
                         {article.isMostRead && (
-                          <span className="rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800">
-                            Most Read
-                          </span>
+                          <AdminBadge tone="purple">Đọc nhiều</AdminBadge>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-1">
+                      <div className="flex justify-end gap-0.5">
                         <Link
                           href={`/admin/articles/${article.id}/edit`}
-                          className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                          title="Edit"
+                          className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                          title="Sửa"
                         >
                           <Pencil className="h-4 w-4" />
                         </Link>
                         <button
                           type="button"
-                          onClick={() => handleDelete(article)}
-                          className="rounded p-1.5 text-neutral-500 hover:bg-red-50 hover:text-red-600"
-                          title="Delete"
+                          onClick={() => setDeleteTarget(article)}
+                          className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          title="Xóa"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -365,47 +388,39 @@ export default function AdminArticlesPage() {
             </table>
           </div>
         )}
-      </div>
+      </AdminPanel>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          Hiển thị{" "}
-          <span className="font-medium text-neutral-900">
-            {pagination.total === 0
-              ? 0
-              : (pagination.page - 1) * pagination.limit + 1}
-            -
-            {Math.min(pagination.page * pagination.limit, pagination.total)}
-          </span>{" "}
-          / <span className="font-medium text-neutral-900">{pagination.total}</span>{" "}
-          bài viết
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setPage((value) => Math.max(value - 1, 1))}
-            disabled={pagination.page <= 1 || loading}
-            className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-40"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Trước
-          </button>
-          <span className="min-w-24 text-center">
-            Trang {pagination.page} / {pagination.totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() =>
-              setPage((value) => Math.min(value + 1, pagination.totalPages))
-            }
-            disabled={pagination.page >= pagination.totalPages || loading}
-            className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-40"
-          >
-            Sau
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      {!loading && articles.length > 0 && (
+        <AdminPagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          loading={loading}
+          itemLabel="bài viết"
+          onPageChange={setPage}
+        />
+      )}
+
+      <AdminConfirmDialog
+        open={!!deleteTarget}
+        title="Xóa bài viết?"
+        description={
+          <>
+            Bạn có chắc muốn xóa{" "}
+            <span className="font-semibold text-neutral-900">
+              &ldquo;{deleteTarget?.title}&rdquo;
+            </span>
+            ? Hành động này không thể hoàn tác.
+          </>
+        }
+        confirmLabel="Xóa bài viết"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleting) setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

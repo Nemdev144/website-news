@@ -2,7 +2,6 @@ import { ArticleStatus } from "@/generated/prisma/client";
 import { NextResponse } from "next/server";
 import { isUnauthorized, requireAdmin } from "@/lib/admin-api";
 import { contentBlocksAreValid, parseArticleContent } from "@/lib/article-blocks";
-import { syncArticleMedia } from "@/lib/article-media";
 import { generateSlug } from "@/lib/slug";
 import { prisma } from "@/lib/prisma";
 
@@ -17,10 +16,7 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const article = await prisma.article.findUnique({
       where: { id },
-      include: {
-        category: true,
-        media: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-      },
+      include: { category: true },
     });
     if (!article) {
       return NextResponse.json({ error: "Article not found" }, { status: 404 });
@@ -112,7 +108,7 @@ export async function PUT(request: Request, context: RouteContext) {
       publishedAt = new Date();
     }
 
-    await prisma.article.update({
+    const article = await prisma.article.update({
       where: { id },
       data: {
         title,
@@ -132,17 +128,7 @@ export async function PUT(request: Request, context: RouteContext) {
       include: { category: true },
     });
 
-    await syncArticleMedia(id, []);
-
-    const articleWithMedia = await prisma.article.findUnique({
-      where: { id },
-      include: {
-        category: true,
-        media: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-      },
-    });
-
-    return NextResponse.json({ article: articleWithMedia });
+    return NextResponse.json({ article });
   } catch (error) {
     console.error("[api/admin/articles/[id] PUT]", error);
     return NextResponse.json(

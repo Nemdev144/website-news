@@ -1,40 +1,51 @@
-import ArticleList from "@/components/public/ArticleList";
+import CategoryArticleLayout from "@/components/public/CategoryArticleLayout";
+import CategoryPagination from "@/components/public/CategoryPagination";
 import Breadcrumb from "@/components/public/Breadcrumb";
 import PageSidebar from "@/components/public/PageSidebar";
 import PublicShell from "@/components/public/PublicShell";
-import NewsCard from "@/components/public/NewsCard";
 import { fetchCategoryData } from "@/lib/api-fetch";
-import { getMockCategoryPayload } from "@/lib/mock-fallback";
-import { getCategoryBySlug } from "@/data/mock-news";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+const PAGE_SIZE = 24;
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const apiData = await fetchCategoryData(slug);
-  const mockCategory = getCategoryBySlug(slug);
-  const category = apiData?.category ?? mockCategory;
-  if (!category) return { title: "Category Not Found" };
+  const data = await fetchCategoryData(slug);
+  if (!data) return { title: "Category Not Found" };
   return {
-    title: category.name,
-    description: category.description,
+    title: data.category.name,
+    description: data.category.description,
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params;
-  const apiData = await fetchCategoryData(slug);
-  const data = apiData ?? getMockCategoryPayload(slug);
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(Number(pageParam ?? 1), 1);
+
+  const data = await fetchCategoryData(slug, { page, limit: PAGE_SIZE });
 
   if (!data) {
     notFound();
   }
 
-  const { category, featuredArticle, articles, mostReadArticles, editorPicks } = data;
+  const {
+    category,
+    featuredArticle,
+    articles,
+    mostReadArticles,
+    editorPicks,
+    pagination,
+  } = data;
+
+  const totalArticles = pagination?.total ?? articles.length + (featuredArticle ? 1 : 0);
+  const isFirstPage = page === 1;
 
   return (
     <PublicShell>
@@ -46,50 +57,41 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               className="mb-3"
             />
 
-            <header className="mb-4 border-b border-neutral-200 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="h-5 w-1 bg-brand-800" />
-                <h1 className="font-sans text-xl font-bold uppercase tracking-wide text-neutral-900 sm:text-2xl">
+            <header className="mb-4">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <h1 className="font-sans text-2xl font-bold uppercase tracking-wide text-neutral-900 sm:text-[26px]">
                   {category.name}
                 </h1>
+                <span className="font-sans text-xs text-neutral-400">
+                  {totalArticles} {totalArticles === 1 ? "article" : "articles"}
+                </span>
               </div>
-              <p className="mt-2 font-sans text-sm leading-relaxed text-neutral-600">
-                {category.description}
-              </p>
-              <p className="mt-1 font-sans text-[11px] text-neutral-400">
-                {articles.length + (featuredArticle ? 1 : 0)}{" "}
-                {(articles.length + (featuredArticle ? 1 : 0)) === 1
-                  ? "article"
-                  : "articles"}
-              </p>
+              {category.description ? (
+                <p className="mt-1.5 font-sans text-sm text-neutral-500">
+                  {category.description}
+                </p>
+              ) : (
+                <p className="mt-1.5 font-sans text-sm text-neutral-500">
+                  Latest · Analysis · Breaking news
+                </p>
+              )}
+              <div className="mt-3 border-b border-dotted border-neutral-400" />
             </header>
 
-            {!featuredArticle && articles.length === 0 ? (
-              <ArticleList
-                articles={[]}
-                emptyMessage={`No articles published in ${category.name} yet. Check back soon.`}
-              />
-            ) : (
-              <>
-                {featuredArticle && (
-                  <section className="mb-4 border-b border-neutral-200 pb-4" aria-label="Featured">
-                    <p className="mb-2 font-sans text-[10px] font-bold uppercase tracking-wider text-brand-800">
-                      Featured
-                    </p>
-                    <NewsCard article={featuredArticle} variant="hero-lead" showExcerpt />
-                  </section>
-                )}
+            <CategoryArticleLayout
+              featuredArticle={isFirstPage ? featuredArticle : null}
+              articles={articles}
+              categoryName={category.name}
+              isFirstPage={isFirstPage}
+            />
 
-                <section aria-label="Article list">
-                  <p className="mb-2 font-sans text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                    Latest in {category.name}
-                  </p>
-                  <ArticleList
-                    articles={articles}
-                    emptyMessage="No additional articles in this category."
-                  />
-                </section>
-              </>
+            {pagination && pagination.totalPages > 1 && (
+              <CategoryPagination
+                slug={slug}
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                total={pagination.total}
+              />
             )}
           </main>
 

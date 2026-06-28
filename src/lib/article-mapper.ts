@@ -1,12 +1,10 @@
 import type {
   Article as PrismaArticle,
   Category as PrismaCategory,
-  Media as PrismaMedia,
 } from "@/generated/prisma/client";
 import type {
   Article,
   ArticleDetail,
-  ArticleMediaItem,
   Category,
   CategorySlug,
   MultimediaItem,
@@ -59,26 +57,13 @@ export function mapArticleToPublic(
   };
 }
 
-export function mapMediaToPublic(media: PrismaMedia): ArticleMediaItem {
-  return {
-    id: media.id,
-    url: media.url,
-    title: media.title,
-    caption: media.caption,
-  };
-}
-
 export function mapArticleToDetail(
-  article: PrismaArticle & {
-    category: PrismaCategory;
-    media?: PrismaMedia[];
-  },
+  article: PrismaArticle & { category: PrismaCategory },
 ): ArticleDetail {
   return {
     ...mapArticleToPublic(article),
     content: article.content,
     source: article.source,
-    media: article.media?.map(mapMediaToPublic) ?? [],
   };
 }
 

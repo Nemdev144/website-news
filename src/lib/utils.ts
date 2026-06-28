@@ -19,6 +19,28 @@ export function formatShortDate(date: string | Date): string {
   }).format(new Date(date));
 }
 
+/** Relative time for article lists, e.g. "21 hours ago" or "Jun 27, 2026 10:45" */
+export function formatArticleTimestamp(date: string | Date): string {
+  const published = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - published.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+  if (diffHours >= 0 && diffHours < 24) {
+    const hours = Math.max(diffHours, 1);
+    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(published);
+}
+
 export function formatViewCount(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;

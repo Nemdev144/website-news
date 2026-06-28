@@ -1,9 +1,14 @@
 "use client";
 
+import AdminConfirmDialog from "@/components/admin/AdminConfirmDialog";
 import AdminToast from "@/components/admin/AdminToast";
+import AdminBadge from "@/components/admin/ui/AdminBadge";
+import { AdminButton, adminInputClassName } from "@/components/admin/ui/AdminButton";
+import AdminEmptyState from "@/components/admin/ui/AdminEmptyState";
+import AdminPageHeader from "@/components/admin/ui/AdminPageHeader";
+import AdminPanel from "@/components/admin/ui/AdminPanel";
 import { generateSlug } from "@/lib/slug";
-import { cn } from "@/lib/utils";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { FolderOpen, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface Category {
@@ -42,6 +47,8 @@ export default function AdminCategoriesPage() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,14 +163,14 @@ export default function AdminCategoriesPage() {
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setFormError(data.error ?? "Failed to save category");
+        setFormError(data.error ?? "Không lưu được danh mục");
         return;
       }
 
       closeForm();
       await reloadCategories();
     } catch {
-      setFormError("Failed to save category");
+      setFormError("Không lưu được danh mục");
     } finally {
       setSaving(false);
     }
@@ -180,49 +187,48 @@ export default function AdminCategoriesPage() {
         await reloadCategories();
       }
     } catch {
-      setError("Failed to update category status");
+      setError("Không cập nhật được trạng thái danh mục");
     }
   }
 
   async function handleDelete(category: Category) {
-    if (
-      !window.confirm(
-        `Delete category "${category.name}"? This cannot be undone.`,
-      )
-    ) {
-      return;
-    }
+    setDeleteTarget(category);
+  }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+
+    setDeleting(true);
     try {
-      const response = await fetch(`/api/admin/categories/${category.id}`, {
+      const response = await fetch(`/api/admin/categories/${deleteTarget.id}`, {
         method: "DELETE",
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setError(data.error ?? "Failed to delete category");
+        setError(data.error ?? "Không xóa được danh mục");
         return;
       }
+      setDeleteTarget(null);
       await reloadCategories();
     } catch {
-      setError("Failed to delete category");
+      setError("Không xóa được danh mục");
+    } finally {
+      setDeleting(false);
     }
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-neutral-600">
-          Manage navigation categories and their visibility.
-        </p>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-900"
-        >
-          <Plus className="h-4 w-4" />
-          New Category
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Danh mục"
+        description="Quản lý danh mục hiển thị trên menu và trang chủ."
+        actions={
+          <AdminButton variant="primary" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Thêm danh mục
+          </AdminButton>
+        }
+      />
 
       <AdminToast
         message={error}
@@ -237,21 +243,21 @@ export default function AdminCategoriesPage() {
 
       {formOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeForm();
           }}
         >
-          <div className="w-full max-w-2xl rounded-xl border border-neutral-200 bg-white p-4 shadow-xl sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-serif text-lg font-bold">
-                {editingId ? "Edit Category" : "New Category"}
+          <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xl sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <h2 className="font-serif text-lg font-bold text-neutral-900">
+                {editingId ? "Sửa danh mục" : "Thêm danh mục"}
               </h2>
               <button
                 type="button"
                 onClick={closeForm}
-                className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100"
-                title="Close"
+                className="rounded-lg p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                title="Đóng"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -259,17 +265,21 @@ export default function AdminCategoriesPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Name *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-neutral-700">
+                    Tên *
+                  </label>
                   <input
                     type="text"
                     value={form.name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    className={adminInputClassName()}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Slug *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-neutral-700">
+                    Slug *
+                  </label>
                   <input
                     type="text"
                     value={form.slug}
@@ -278,27 +288,29 @@ export default function AdminCategoriesPage() {
                       setForm((prev) => ({ ...prev, slug: e.target.value }));
                     }}
                     required
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    className={adminInputClassName()}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Description</label>
+                <label className="mb-1.5 block text-sm font-medium text-neutral-700">
+                  Mô tả
+                </label>
                 <textarea
                   value={form.description}
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, description: e.target.value }))
                   }
-                  rows={3}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  rows={2}
+                  className={adminInputClassName("resize-none")}
                 />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Sort Order
+                  <label className="mb-1.5 block text-sm font-medium text-neutral-700">
+                    Thứ tự
                   </label>
                   <input
                     type="number"
@@ -309,11 +321,11 @@ export default function AdminCategoriesPage() {
                         sortOrder: parseInt(e.target.value, 10) || 0,
                       }))
                     }
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    className={adminInputClassName()}
                   />
                 </div>
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2 text-sm">
+                <div className="flex items-end pb-1">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-700">
                     <input
                       type="checkbox"
                       checked={form.isActive}
@@ -323,88 +335,101 @@ export default function AdminCategoriesPage() {
                           isActive: e.target.checked,
                         }))
                       }
-                      className="rounded border-neutral-300"
+                      className="rounded border-neutral-300 text-brand-800 focus:ring-brand-800/20"
                     />
-                    Active (visible in navigation)
+                    Hiển thị trên menu
                   </label>
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <button
+              <div className="flex gap-2 border-t border-neutral-100 pt-4">
+                <AdminButton
                   type="submit"
+                  variant="primary"
                   disabled={saving}
-                  className="rounded-lg bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-900 disabled:opacity-50"
+                  className="flex-1 sm:flex-none"
                 >
-                  {saving ? "Saving..." : editingId ? "Update" : "Create"}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50"
-                >
-                  Cancel
-                </button>
+                  {saving ? "Đang lưu..." : editingId ? "Cập nhật" : "Tạo mới"}
+                </AdminButton>
+                <AdminButton type="button" variant="secondary" onClick={closeForm}>
+                  Hủy
+                </AdminButton>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-        {loading ? (
-          <p className="p-6 text-sm text-neutral-500">Loading categories...</p>
-        ) : categories.length === 0 ? (
-          <p className="p-6 text-sm text-neutral-500">No categories yet.</p>
+      <AdminPanel>
+        {loading || categories.length === 0 ? (
+          <AdminEmptyState
+            loading={loading}
+            icon={FolderOpen}
+            message={
+              loading ? "Đang tải danh mục..." : "Chưa có danh mục nào."
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="border-b border-neutral-200 bg-neutral-50 text-neutral-600">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Slug</th>
-                  <th className="px-4 py-3 font-medium">Order</th>
-                  <th className="px-4 py-3 font-medium">Articles</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+            <table className="admin-table w-full min-w-[560px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 font-medium">Tên</th>
+                  <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                    Slug
+                  </th>
+                  <th className="px-4 py-3 font-medium">TT</th>
+                  <th className="hidden px-4 py-3 font-medium md:table-cell">
+                    Bài viết
+                  </th>
+                  <th className="px-4 py-3 font-medium">Trạng thái</th>
+                  <th className="px-4 py-3 font-medium text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody className="divide-y divide-neutral-50">
                 {categories.map((category) => (
-                  <tr key={category.id} className="hover:bg-neutral-50">
-                    <td className="px-4 py-3 font-medium">{category.name}</td>
-                    <td className="px-4 py-3 text-neutral-500">{category.slug}</td>
-                    <td className="px-4 py-3">{category.sortOrder}</td>
-                    <td className="px-4 py-3">{category._count?.articles ?? 0}</td>
+                  <tr
+                    key={category.id}
+                    className="transition-colors hover:bg-neutral-50/80"
+                  >
+                    <td className="px-4 py-3 font-medium text-neutral-900">
+                      {category.name}
+                    </td>
+                    <td className="hidden px-4 py-3 font-mono text-xs text-neutral-500 sm:table-cell">
+                      {category.slug}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-neutral-600">
+                      {category.sortOrder}
+                    </td>
+                    <td className="hidden px-4 py-3 tabular-nums text-neutral-600 md:table-cell">
+                      {category._count?.articles ?? 0}
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
                         onClick={() => toggleActive(category)}
-                        className={cn(
-                          "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          category.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-neutral-200 text-neutral-600",
-                        )}
+                        className="cursor-pointer"
                       >
-                        {category.isActive ? "Active" : "Inactive"}
+                        <AdminBadge tone={category.isActive ? "green" : "neutral"}>
+                          {category.isActive ? "Đang hiện" : "Ẩn"}
+                        </AdminBadge>
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-1">
+                      <div className="flex justify-end gap-0.5">
                         <button
                           type="button"
                           onClick={() => openEdit(category)}
-                          className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                          title="Edit"
+                          className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                          title="Sửa"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(category)}
-                          className="rounded p-1.5 text-neutral-500 hover:bg-red-50 hover:text-red-600"
-                          title="Delete"
+                          className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          title="Xóa"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -416,7 +441,27 @@ export default function AdminCategoriesPage() {
             </table>
           </div>
         )}
-      </div>
+      </AdminPanel>
+
+      <AdminConfirmDialog
+        open={!!deleteTarget}
+        title="Xóa danh mục?"
+        description={
+          <>
+            Bạn có chắc muốn xóa danh mục{" "}
+            <span className="font-semibold text-neutral-900">
+              &ldquo;{deleteTarget?.name}&rdquo;
+            </span>
+            ? Hành động này không thể hoàn tác.
+          </>
+        }
+        confirmLabel="Xóa danh mục"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleting) setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }
