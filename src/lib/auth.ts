@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-export const ADMIN_COOKIE_NAME = "website_news_admin_token";
+export const ADMIN_COOKIE_NAME = "theherald_admin_token";
 
 export interface AdminJwtPayload {
   userId: string;

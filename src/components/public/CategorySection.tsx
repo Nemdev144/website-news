@@ -49,9 +49,6 @@ export default function CategorySection({
           <h2 className="font-sans text-sm font-bold uppercase tracking-wide text-neutral-900">
             {label}
           </h2>
-          <span className="hidden font-sans text-[11px] text-neutral-400 sm:inline">
-            ({articles.length} {articles.length === 1 ? "article" : "articles"})
-          </span>
         </div>
         <Link
           href={categoryPath(category)}

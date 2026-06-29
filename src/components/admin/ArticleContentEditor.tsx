@@ -10,6 +10,7 @@ import {
 } from "@/lib/article-blocks";
 import { cn } from "@/lib/utils";
 import {
+  CaseUpper,
   ChevronDown,
   ChevronUp,
   Eye,
@@ -36,12 +37,15 @@ function AutoResizeTextarea({
   value,
   className,
   rows = 1,
+  textareaRef,
   ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  textareaRef?: (element: HTMLTextAreaElement | null) => void;
+}) {
+  const localRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    const textarea = textareaRef.current;
+    const textarea = localRef.current;
     if (!textarea) return;
 
     textarea.style.height = "auto";
@@ -50,7 +54,10 @@ function AutoResizeTextarea({
 
   return (
     <textarea
-      ref={textareaRef}
+      ref={(element) => {
+        localRef.current = element;
+        textareaRef?.(element);
+      }}
       value={value}
       rows={rows}
       className={cn("resize-none overflow-hidden", className)}
@@ -67,6 +74,7 @@ export default function ArticleContentEditor({
 }: ArticleContentEditorProps) {
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+  const textAreaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
   function updateBlock(id: string, patch: Partial<ContentBlock>) {
     onChange(
@@ -74,6 +82,26 @@ export default function ArticleContentEditor({
         block.id === id ? ({ ...block, ...patch } as ContentBlock) : block,
       ),
     );
+  }
+
+  function uppercaseText(block: TextBlock) {
+    const textarea = textAreaRefs.current[block.id];
+    const selectionStart = textarea?.selectionStart ?? 0;
+    const selectionEnd = textarea?.selectionEnd ?? 0;
+    const hasSelection = selectionEnd > selectionStart;
+    const selectedText = block.value.slice(selectionStart, selectionEnd);
+    const uppercaseValue = hasSelection
+      ? `${block.value.slice(0, selectionStart)}${selectedText.toLocaleUpperCase("vi-VN")}${block.value.slice(selectionEnd)}`
+      : block.value.toLocaleUpperCase("vi-VN");
+
+    updateBlock(block.id, { value: uppercaseValue });
+
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      if (hasSelection) {
+        textarea?.setSelectionRange(selectionStart, selectionEnd);
+      }
+    });
   }
 
   function removeBlock(id: string) {
@@ -287,18 +315,38 @@ export default function ArticleContentEditor({
             </div>
 
             {block.type === "text" ? (
-              <AutoResizeTextarea
-                value={block.value}
-                onChange={(e) => updateBlock(block.id, { value: e.target.value })}
-                onPaste={(event) => handlePaste(event, block.id)}
-                rows={2}
-                placeholder={
-                  index === 0
-                    ? "Viết nội dung bài viết tại đây. Enter = xuống đoạn mới. Enter 2 lần = cách thêm khoảng trống..."
-                    : "Viết tiếp nội dung..."
-                }
-                className="min-h-16 w-full border-0 bg-transparent px-4 py-4 pr-28 text-base leading-7 outline-none placeholder:text-neutral-400"
-              />
+              <div>
+                <div className="flex items-center gap-2 border-b border-neutral-100 bg-neutral-50 px-4 py-2 pr-32">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => uppercaseText(block)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                    title="Chuyển phần chữ đang chọn thành chữ in hoa"
+                  >
+                    <CaseUpper className="h-4 w-4" />
+                    IN HOA
+                  </button>
+                  <span className="text-xs text-neutral-400">
+                    Chọn chữ rồi bấm; nếu chưa chọn sẽ in hoa cả đoạn
+                  </span>
+                </div>
+                <AutoResizeTextarea
+                  textareaRef={(element) => {
+                    textAreaRefs.current[block.id] = element;
+                  }}
+                  value={block.value}
+                  onChange={(e) => updateBlock(block.id, { value: e.target.value })}
+                  onPaste={(event) => handlePaste(event, block.id)}
+                  rows={2}
+                  placeholder={
+                    index === 0
+                      ? "Viết nội dung bài viết tại đây. Enter = xuống đoạn mới. Enter 2 lần = cách thêm khoảng trống..."
+                      : "Viết tiếp nội dung..."
+                  }
+                  className="min-h-16 w-full border-0 bg-transparent px-4 py-4 pr-28 text-base leading-7 outline-none placeholder:text-neutral-400"
+                />
+              </div>
             ) : (
               <div
                 className="px-4 py-5 pr-28"
@@ -400,10 +448,29 @@ export default function ArticleContentEditor({
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Viết tiếp sau ảnh
-                    </label>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <label className="block text-sm font-medium">
+                        Viết tiếp sau ảnh
+                      </label>
+                      {textAfterImage && (
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => uppercaseText(textAfterImage)}
+                          className="inline-flex items-center gap-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                          title="Chuyển phần chữ đang chọn thành chữ in hoa"
+                        >
+                          <CaseUpper className="h-3.5 w-3.5" />
+                          IN HOA
+                        </button>
+                      )}
+                    </div>
                     <AutoResizeTextarea
+                      textareaRef={(element) => {
+                        if (textAfterImage) {
+                          textAreaRefs.current[textAfterImage.id] = element;
+                        }
+                      }}
                       value={textAfterImage?.value ?? ""}
                       onChange={(event) =>
                         updateTextAfterImage(index, event.target.value)

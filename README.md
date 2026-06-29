@@ -273,7 +273,7 @@ public/
 | `POST` | `/api/auth/logout` | Clear session cookie |
 | `GET` | `/api/auth/me` | Current admin user |
 
-Session cookie: `website_news_admin_token`
+Session cookie: `theherald_admin_token`
 
 ### Admin (authenticated)
 

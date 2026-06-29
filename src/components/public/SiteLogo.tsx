@@ -163,11 +163,11 @@ export function AdminSidebarBrand({
     return (
       <Link
         href="/admin/dashboard"
-        className="mx-auto flex justify-center"
+        className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white"
         onClick={onNavigate}
         title={SITE_NAME}
       >
-        <SiteLogo variant="admin" linked={false} />
+        <SiteLogo variant="admin" linked={false} className="h-8 w-8" />
       </Link>
     );
   }

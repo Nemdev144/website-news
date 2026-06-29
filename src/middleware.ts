@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const ADMIN_COOKIE_NAME = "website_news_admin_token";
+const ADMIN_COOKIE_NAME = "theherald_admin_token";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

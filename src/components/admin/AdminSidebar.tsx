@@ -57,28 +57,50 @@ export default function AdminSidebar({
   }
 
   return (
-    <aside className="flex h-full flex-col border-r border-neutral-800/50 bg-neutral-950 text-white">
-      <div className="border-b border-white/10 px-3 py-4">
-        <div className="flex items-center justify-between gap-2">
-          <AdminSidebarBrand collapsed={collapsed} onNavigate={onNavigate} />
-          {onToggleCollapsed && (
-            <button
-              type="button"
-              onClick={onToggleCollapsed}
-              className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
-              title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
-            >
-              {collapsed ? (
+    <aside className="flex h-full w-full flex-col border-r border-neutral-800/50 bg-neutral-950 text-white">
+      <div
+        className={cn(
+          "border-b border-white/10 py-4",
+          collapsed ? "flex flex-col items-center gap-2 px-2" : "px-3",
+        )}
+      >
+        {collapsed ? (
+          <>
+            <AdminSidebarBrand collapsed onNavigate={onNavigate} />
+            {onToggleCollapsed ? (
+              <button
+                type="button"
+                onClick={onToggleCollapsed}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+                title="Mở rộng menu"
+              >
                 <PanelLeftOpen className="h-4 w-4" />
-              ) : (
+              </button>
+            ) : null}
+          </>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <AdminSidebarBrand onNavigate={onNavigate} />
+            {onToggleCollapsed ? (
+              <button
+                type="button"
+                onClick={onToggleCollapsed}
+                className="shrink-0 rounded-lg p-2 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+                title="Thu gọn menu"
+              >
                 <PanelLeftClose className="h-4 w-4" />
-              )}
-            </button>
-          )}
-        </div>
+              </button>
+            ) : null}
+          </div>
+        )}
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-2 py-3">
+      <nav
+        className={cn(
+          "flex-1 space-y-0.5 py-3",
+          collapsed ? "px-1.5" : "px-2",
+        )}
+      >
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = isActive(href);
           return (
@@ -87,17 +109,19 @@ export default function AdminSidebar({
               href={href}
               onClick={onNavigate}
               className={cn(
-                "group relative flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                collapsed && "justify-center px-2",
+                "group relative flex items-center rounded-lg text-sm font-medium transition-colors",
+                collapsed
+                  ? "mx-auto h-10 w-10 justify-center"
+                  : "gap-2.5 px-3 py-2.5",
                 active
                   ? "bg-white/10 text-white"
                   : "text-neutral-400 hover:bg-white/5 hover:text-white",
               )}
               title={collapsed ? label : undefined}
             >
-              {active && (
+              {active && !collapsed ? (
                 <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-brand-700" />
-              )}
+              ) : null}
               <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.25 : 2} />
               <span className={cn(collapsed && "sr-only")}>{label}</span>
             </Link>
@@ -105,13 +129,20 @@ export default function AdminSidebar({
         })}
       </nav>
 
-      <div className="space-y-0.5 border-t border-white/10 px-2 py-3">
+      <div
+        className={cn(
+          "space-y-0.5 border-t border-white/10 py-3",
+          collapsed ? "px-1.5" : "px-2",
+        )}
+      >
         <Link
           href="/"
           target="_blank"
           className={cn(
-            "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white",
-            collapsed && "justify-center px-2",
+            "flex items-center rounded-lg text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white",
+            collapsed
+              ? "mx-auto h-10 w-10 justify-center"
+              : "gap-2.5 px-3 py-2.5",
           )}
           title={collapsed ? "Xem trang web" : undefined}
         >
@@ -123,8 +154,10 @@ export default function AdminSidebar({
           onClick={handleLogout}
           disabled={loggingOut}
           className={cn(
-            "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50",
-            collapsed && "justify-center px-2",
+            "flex items-center rounded-lg text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50",
+            collapsed
+              ? "mx-auto h-10 w-10 justify-center"
+              : "w-full gap-2.5 px-3 py-2.5",
           )}
           title={collapsed ? "Đăng xuất" : undefined}
         >
