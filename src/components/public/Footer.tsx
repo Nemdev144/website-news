@@ -1,3 +1,5 @@
+import { FooterBrand } from "@/components/public/SiteLogo";
+import { SITE_EMAIL, SITE_NAME } from "@/lib/site";
 import { categoryPath } from "@/lib/utils";
 import Link from "next/link";
 
@@ -18,10 +20,8 @@ export default function Footer({ categories = [] }: FooterProps) {
       <div className="mx-auto max-w-[1280px] px-3 py-5 sm:px-4">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Link href="/">
-              <span className="font-serif text-lg font-bold text-neutral-900">Website News</span>
-            </Link>
-            <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+            <FooterBrand />
+            <p className="mt-3 text-xs leading-relaxed text-neutral-500">
               Independent English news portal — thoughtful reporting and clear analysis.
             </p>
           </div>
@@ -52,8 +52,8 @@ export default function Footer({ categories = [] }: FooterProps) {
             </h3>
             <ul className="mt-2 space-y-1 text-xs text-neutral-600">
               <li>
-                <a href="mailto:newsroom@websitenews.com" className="hover:text-brand-800">
-                  newsroom@websitenews.com
+                <a href={`mailto:${SITE_EMAIL}`} className="hover:text-brand-800">
+                  {SITE_EMAIL}
                 </a>
               </li>
               <li>+1 (555) 012-3456</li>
@@ -75,7 +75,7 @@ export default function Footer({ categories = [] }: FooterProps) {
         </div>
 
         <div className="mt-5 flex flex-col items-center justify-between gap-2 border-t border-neutral-200 pt-4 text-[10px] text-neutral-400 sm:flex-row">
-          <p>© {currentYear} Website News. All rights reserved.</p>
+          <p>© {currentYear} {SITE_NAME}. All rights reserved.</p>
           <div className="flex gap-3">
             <Link href="#" className="hover:text-brand-800">Privacy</Link>
             <Link href="#" className="hover:text-brand-800">Terms</Link>

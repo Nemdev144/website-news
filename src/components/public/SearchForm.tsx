@@ -2,7 +2,6 @@
 
 import { searchPath } from "@/lib/utils";
 import { Search } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
@@ -60,18 +59,5 @@ export default function SearchForm({
         </button>
       </div>
     </form>
-  );
-}
-
-export function HeaderBrand() {
-  return (
-    <Link href="/" className="group shrink-0">
-      <span className="font-serif text-2xl font-bold leading-none tracking-tight text-neutral-900 transition-colors group-hover:text-brand-800 sm:text-[28px]">
-        Website News
-      </span>
-      <p className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-widest text-neutral-400 sm:block">
-        Independent stories · Clear perspectives
-      </p>
-    </Link>
   );
 }

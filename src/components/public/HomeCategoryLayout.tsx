@@ -1,5 +1,4 @@
 import CategorySection from "@/components/public/CategorySection";
-import { TopicsStrip } from "@/components/public/HomeExtras";
 import MultimediaSection from "@/components/public/MultimediaSection";
 import type { Article, MultimediaItem } from "@/types/news";
 
@@ -22,18 +21,10 @@ export default function HomeCategoryLayout({
     return null;
   }
 
-  const topics = sections.map((section) => ({
-    id: section.category,
-    title: section.categoryName,
-    slug: section.category,
-  }));
-
   const multimediaAfterIndex = Math.min(1, sections.length - 1);
 
   return (
     <div className="space-y-6 pt-2">
-      {topics.length > 1 && <TopicsStrip topics={topics} />}
-
       {sections.map((section, index) => (
         <div key={section.category}>
           <CategorySection

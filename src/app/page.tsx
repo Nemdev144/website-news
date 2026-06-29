@@ -44,10 +44,7 @@ export default async function Home() {
           </main>
 
           <aside className="min-w-0 py-3 lg:col-span-3">
-            <PageSidebar
-              mostReadArticles={data?.mostReadArticles ?? []}
-              editorPicksArticles={data?.editorPicks ?? []}
-            />
+            <PageSidebar mostReadArticles={data?.mostReadArticles ?? []} />
           </aside>
         </div>
       </div>

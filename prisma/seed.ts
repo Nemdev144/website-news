@@ -5,6 +5,8 @@ import { createPrismaClient } from "../src/lib/prisma";
 
 const prisma = createPrismaClient();
 
+const SITE_NAME = "The Herald";
+
 type SeedCategory = {
   name: string;
   slug: string;
@@ -90,11 +92,11 @@ const categories: SeedCategory[] = [
 function buildContent(excerpt: string, title: string): string {
   return [
     excerpt,
-    `Reporting teams across Website News have been tracking developments around "${title}" as officials, analysts, and residents respond to a fast-moving story with wide-ranging implications.`,
+    `Reporting teams across ${SITE_NAME} have been tracking developments around "${title}" as officials, analysts, and residents respond to a fast-moving story with wide-ranging implications.`,
     "Sources familiar with the matter say conversations remain active at senior levels, with stakeholders weighing short-term responses against longer-term structural changes that could reshape policy for years to come.",
     "In public forums and editorial pages alike, debate has intensified over transparency, accountability, and the pace of decision-making in an environment defined by rapid information flows.",
     "Community leaders emphasized the need for clear communication, while international observers continue monitoring signals from markets, institutions, and diplomatic channels.",
-    "Website News will continue to update this story as verified information becomes available.",
+    `${SITE_NAME} will continue to update this story as verified information becomes available.`,
   ].join("\n\n");
 }
 
@@ -107,7 +109,7 @@ const articles: SeedArticle[] = [
     categorySlug: "world",
     coverImage: "/images/placeholders/world-1.jpg",
     author: "Sarah Mitchell",
-    source: "Website News World Desk",
+    source: "The Herald World Desk",
     isFeatured: true,
     isHot: true,
     isMostRead: true,
@@ -445,8 +447,8 @@ async function main() {
     data: {
       username: "admin",
       passwordHash,
-      fullName: "Website News Admin",
-      email: "admin@websitenews.com",
+      fullName: "The Herald Admin",
+      email: "admin@theherald.com",
       isActive: true,
     },
   });

@@ -6,6 +6,7 @@ import SearchForm from "@/components/public/SearchForm";
 import { fetchSearchData } from "@/lib/api-fetch";
 import { mapArticlesToPublic } from "@/lib/article-mapper";
 import { fetchMostReadArticles } from "@/lib/public-articles";
+import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 
 interface SearchPageProps {
@@ -17,7 +18,7 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   const query = q?.trim() ?? "";
   return {
     title: query ? `Search: ${query}` : "Search",
-    description: "Search articles on Website News",
+    description: `Search articles on ${SITE_NAME}`,
   };
 }
 
@@ -47,7 +48,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <header className="mb-4 border-b border-neutral-200 pb-4">
               <h1 className="font-serif text-2xl font-bold text-neutral-900">Search</h1>
               <p className="mt-1 font-sans text-sm text-neutral-600">
-                Find stories across Website News
+                Find stories across {SITE_NAME}
               </p>
               <div className="mt-3 max-w-lg">
                 <SearchForm
@@ -79,11 +80,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </main>
 
           <aside className="min-w-0 py-4 lg:col-span-3">
-            <PageSidebar
-              showNewsletter={false}
-              showEditorsPicks={false}
-              mostReadArticles={mostReadArticles}
-            />
+            <PageSidebar mostReadArticles={mostReadArticles} />
           </aside>
         </div>
       </div>

@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminSidebarBrand } from "@/components/public/SiteLogo";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -59,16 +60,7 @@ export default function AdminSidebar({
     <aside className="flex h-full flex-col border-r border-neutral-800/50 bg-neutral-950 text-white">
       <div className="border-b border-white/10 px-3 py-4">
         <div className="flex items-center justify-between gap-2">
-          <Link
-            href="/admin/dashboard"
-            className={cn(
-              "min-w-0 font-serif text-base font-bold tracking-tight",
-              collapsed && "sr-only",
-            )}
-            onClick={onNavigate}
-          >
-            Website News
-          </Link>
+          <AdminSidebarBrand collapsed={collapsed} onNavigate={onNavigate} />
           {onToggleCollapsed && (
             <button
               type="button"
@@ -84,9 +76,6 @@ export default function AdminSidebar({
             </button>
           )}
         </div>
-        <p className={cn("mt-0.5 text-[11px] uppercase tracking-wider text-neutral-500", collapsed && "sr-only")}>
-          CMS
-        </p>
       </div>
 
       <nav className="flex-1 space-y-0.5 px-2 py-3">

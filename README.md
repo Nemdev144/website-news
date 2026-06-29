@@ -1,4 +1,4 @@
-# Website News
+# The Herald
 
 English online newspaper built with Next.js, inspired by the layout structure of [congluan.vn](https://congluan.vn). The project includes a public news site and an admin CMS for managing categories and articles.
 

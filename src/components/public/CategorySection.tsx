@@ -50,14 +50,14 @@ export default function CategorySection({
             {label}
           </h2>
           <span className="hidden font-sans text-[11px] text-neutral-400 sm:inline">
-            ({articles.length} bài)
+            ({articles.length} {articles.length === 1 ? "article" : "articles"})
           </span>
         </div>
         <Link
           href={categoryPath(category)}
           className="shrink-0 font-sans text-[11px] font-semibold text-brand-800 transition-colors hover:text-brand-900"
         >
-          Xem tất cả →
+          View all →
         </Link>
       </div>
 
@@ -161,7 +161,7 @@ export default function CategorySection({
                 {headlineItems.length > 0 && (
                   <div className="rounded-sm border border-neutral-100 bg-neutral-50/60 p-2 lg:col-span-3">
                     <p className="mb-1 font-sans text-[9px] font-bold uppercase tracking-wider text-neutral-400">
-                      Tin mới
+                      Latest
                     </p>
                     {headlineItems.map((article) => (
                       <NewsCard key={article.id} article={article} variant="headline" />

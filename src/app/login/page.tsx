@@ -1,6 +1,7 @@
 "use client";
 
 import AdminToast from "@/components/admin/AdminToast";
+import { LoginBrand } from "@/components/public/SiteLogo";
 import { adminInputClassName } from "@/components/admin/ui/AdminButton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState, Suspense } from "react";
@@ -47,14 +48,9 @@ function LoginForm() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-900/30 via-neutral-950 to-neutral-950" />
 
       <div className="relative w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-800 font-serif text-lg font-bold text-white shadow-lg shadow-brand-900/30">
-            WN
-          </div>
-          <h1 className="font-serif text-2xl font-bold text-white">
-            Website News
-          </h1>
-          <p className="mt-1 text-sm text-neutral-400">Đăng nhập quản trị</p>
+        <div className="mb-6">
+          <LoginBrand />
+          <p className="mt-5 text-center text-sm text-neutral-400">Đăng nhập quản trị</p>
         </div>
 
         <form

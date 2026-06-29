@@ -64,7 +64,7 @@ export default function ArticleLikeButton({
           ? "border-red-200 bg-red-50 text-red-700"
           : "border-neutral-300 bg-white text-neutral-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700",
       )}
-      title={liked ? "Đã thích bài viết" : "Thích bài viết"}
+      title={liked ? "You liked this article" : "Like this article"}
     >
       <Heart className={cn("h-4 w-4", liked && "fill-current")} />
       {formatViewCount(likeCount)} likes

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_DESCRIPTION, SITE_ICON_PATH, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
@@ -16,11 +17,10 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Website News — Independent stories. Clear perspectives.",
-    template: "%s | Website News",
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Website News is an independent English news portal covering world affairs, politics, business, technology, society, culture, and opinion.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "news",
     "English news",
@@ -31,11 +31,15 @@ export const metadata: Metadata = {
     "independent journalism",
   ],
   openGraph: {
-    title: "Website News",
-    description: "Independent stories. Clear perspectives.",
+    title: SITE_NAME,
+    description: SITE_TAGLINE,
     type: "website",
     locale: "en_US",
-    siteName: "Website News",
+    siteName: SITE_NAME,
+  },
+  icons: {
+    icon: SITE_ICON_PATH,
+    apple: SITE_ICON_PATH,
   },
 };
 

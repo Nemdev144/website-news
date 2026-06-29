@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminMenuButton } from "@/components/admin/AdminSidebar";
+import { AdminHeaderBrand } from "@/components/public/SiteLogo";
 
 interface AdminHeaderProps {
   adminName: string;
@@ -23,9 +24,7 @@ export default function AdminHeader({
       <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <AdminMenuButton onClick={onMenuClick} />
-          <span className="hidden text-sm font-medium text-neutral-500 sm:inline">
-            Website News · CMS
-          </span>
+          <AdminHeaderBrand />
         </div>
         <div className="flex shrink-0 items-center gap-2.5">
           <div className="hidden text-right sm:block">

@@ -37,7 +37,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
-  const { article, relatedArticles, mostReadArticles, editorPicks } = data;
+  const { article, relatedArticles, mostReadArticles } = data;
   const categoryName = categoryLabel(article.category);
 
   return (
@@ -104,11 +104,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </article>
 
           <aside className="min-w-0 py-4 lg:col-span-3">
-            <PageSidebar
-              showNewsletter={false}
-              mostReadArticles={mostReadArticles}
-              editorPicksArticles={editorPicks}
-            />
+            <PageSidebar mostReadArticles={mostReadArticles} />
           </aside>
         </div>
       </div>

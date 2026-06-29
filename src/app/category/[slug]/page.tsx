@@ -40,7 +40,6 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     featuredArticle,
     articles,
     mostReadArticles,
-    editorPicks,
     pagination,
   } = data;
 
@@ -96,10 +95,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           </main>
 
           <aside className="min-w-0 py-4 lg:col-span-3">
-            <PageSidebar
-              mostReadArticles={mostReadArticles}
-              editorPicksArticles={editorPicks}
-            />
+            <PageSidebar mostReadArticles={mostReadArticles} />
           </aside>
         </div>
       </div>

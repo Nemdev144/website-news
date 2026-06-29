@@ -131,7 +131,7 @@ export default function HeroStoryCarousel({
               type="button"
               onClick={() => goTo(index - 1)}
               className="absolute left-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white shadow-lg ring-1 ring-white/25 backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/55 sm:left-3 sm:h-10 sm:w-10"
-              aria-label="Bài trước"
+              aria-label="Previous story"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
             </button>
@@ -140,7 +140,7 @@ export default function HeroStoryCarousel({
               type="button"
               onClick={() => goTo(index + 1)}
               className="absolute right-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white shadow-lg ring-1 ring-white/25 backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/55 sm:right-3 sm:h-10 sm:w-10"
-              aria-label="Bài sau"
+              aria-label="Next story"
             >
               <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
             </button>
@@ -152,7 +152,7 @@ export default function HeroStoryCarousel({
                     key={item.id}
                     type="button"
                     onClick={() => setIndex(i)}
-                    aria-label={`Tin ${i + 1}: ${item.title}`}
+                    aria-label={`Story ${i + 1}: ${item.title}`}
                     aria-current={i === index ? "true" : undefined}
                     className={cn(
                       "h-1 rounded-full transition-all duration-300",

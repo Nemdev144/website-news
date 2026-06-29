@@ -48,18 +48,6 @@ export async function fetchMostReadArticles(limit = 10) {
   });
 }
 
-export async function fetchEditorPicks(limit = 5) {
-  return prisma.article.findMany({
-    where: {
-      ...publishedWhere,
-      category: { slug: "opinion" },
-    },
-    include: articleInclude,
-    orderBy: { publishedAt: "desc" },
-    take: limit,
-  });
-}
-
 export async function fetchMultimediaArticles(limit = 6) {
   return prisma.article.findMany({
     where: {
@@ -182,14 +170,12 @@ export async function getHomePayload() {
     hotRows,
     latestRows,
     mostReadRows,
-    editorRows,
     multimediaRows,
   ] = await Promise.all([
     fetchFeaturedArticles(5),
     fetchHotArticles(12),
     fetchPublishedArticles(24),
     fetchMostReadArticles(10),
-    fetchEditorPicks(5),
     fetchMultimediaArticles(6),
   ]);
 
@@ -202,7 +188,6 @@ export async function getHomePayload() {
     mostReadArticles: mapArticlesToPublic(mostReadRows),
     categorySections,
     multimediaArticles: mapArticlesToMultimediaItems(multimediaRows),
-    editorPicks: mapArticlesToPublic(editorRows),
   };
 }
 
@@ -218,10 +203,9 @@ export async function getCategoryPayload(
   const page = Math.max(options?.page ?? 1, 1);
   const limit = Math.min(Math.max(options?.limit ?? DEFAULT_CATEGORY_PAGE_SIZE, 1), 48);
 
-  const [articleRows, mostReadRows, editorRows] = await Promise.all([
+  const [articleRows, mostReadRows] = await Promise.all([
     fetchArticlesByCategorySlug(slug),
     fetchMostReadArticles(8),
-    fetchEditorPicks(5),
   ]);
 
   const articles = mapArticlesToPublic(articleRows);
@@ -253,7 +237,6 @@ export async function getCategoryPayload(
       totalPages,
     },
     mostReadArticles: mapArticlesToPublic(mostReadRows),
-    editorPicks: mapArticlesToPublic(editorRows),
   };
 }
 
@@ -269,17 +252,15 @@ export async function getArticlePayload(
       ? articleRow
       : await incrementArticleViewCount(articleRow.id);
 
-  const [relatedRows, mostReadRows, editorRows] = await Promise.all([
+  const [relatedRows, mostReadRows] = await Promise.all([
     fetchRelatedArticles(updatedRow.category.slug, updatedRow.id, 4),
     fetchMostReadArticles(8),
-    fetchEditorPicks(5),
   ]);
 
   return {
     article: mapArticleToDetail(updatedRow),
     relatedArticles: mapArticlesToPublic(relatedRows),
     mostReadArticles: mapArticlesToPublic(mostReadRows),
-    editorPicks: mapArticlesToPublic(editorRows),
   };
 }
 
