@@ -1,233 +1,359 @@
 # The Herald
 
-English online newspaper built with Next.js, inspired by the layout structure of [congluan.vn](https://congluan.vn). The project includes a public news site and an admin CMS for managing categories and articles.
+**Independent journalism. Clear perspectives.**
+
+English-language news platform built with **Next.js 16** and **MySQL**. Includes a public news website and a password-protected admin CMS for categories and articles.
+
+---
+
+## Table of contents
+
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Requirements](#requirements)
+- [Quick start](#quick-start)
+- [Environment variables](#environment-variables)
+- [Database](#database)
+- [Default admin login](#default-admin-login)
+- [npm scripts](#npm-scripts)
+- [Project structure](#project-structure)
+- [Routes](#routes)
+- [API reference](#api-reference)
+- [Article content format](#article-content-format)
+- [Branding & SEO](#branding--seo)
+- [Production](#production)
+- [License](#license)
+
+---
 
 ## Features
 
-### Public website
+### Public site
 
-- **Homepage** — featured stories, hot ticker, latest news, category sections, most read, editor picks, multimedia
-- **Category pages** — `/category/[slug]`
-- **Article detail** — `/article/[slug]` with cover image, block-based body (text + inline images with captions), related articles, like button
-- **Search** — `/search?q=...`
-- Only **PUBLISHED** articles appear publicly; category navigation and footer categories come from the database
+| Area | Description |
+|------|-------------|
+| **Homepage** | Hero carousel, hot-news ticker, quick news grid, category sections (all active categories with articles), multimedia block, Most Read sidebar |
+| **Category** | `/category/[slug]` — spotlight layout (1 lead + 2 side stories), list rows with thumbnail + excerpt, pagination |
+| **Article** | `/article/[slug]` — title, excerpt, metadata, block-based body, like button, related articles |
+| **Search** | `/search?q=...` — full-text search on published articles |
 
-### Admin CMS
+- Only articles with status **`PUBLISHED`** appear on the public site.
+- Navigation and footer categories are loaded from the database (`isActive: true`).
+- **`coverImage`** is used on cards and listings only — it is **not** rendered inside the article body.
 
-Protected under `/admin` (login at `/login`).
+### Admin CMS (`/admin`)
 
 | Section | Path | Capabilities |
-|--------|------|--------------|
-| Dashboard | `/admin/dashboard` | Stats, status/category charts, latest & most-read articles |
-| Articles | `/admin/articles` | List, search, filter by status/category, create, edit, delete |
+|---------|------|--------------|
+| Dashboard | `/admin/dashboard` | Overview stats and recent activity |
+| Articles | `/admin/articles` | List, search, filter, create, edit, delete |
 | Categories | `/admin/categories` | CRUD, toggle active/inactive, slug validation |
 
 **Article editor**
 
-- **Cover image** (`coverImage`) — separate field for thumbnail / hero on listings and article header
-- **Block content** — alternating text and image blocks stored as JSON in `Article.content`
-- **Image upload** — upload to `public/uploads/` via `/api/admin/uploads` (max 6MB, JPEG/PNG/WebP/GIF/AVIF)
-- Flags: Featured, Hot, Most Read
-- Status: `DRAFT`, `PUBLISHED`, `ARCHIVED`
+- **Cover image** — separate field for thumbnails and listing cards
+- **Block content** — text and image blocks stored as JSON in `Article.content`
+- **Image upload** — `POST /api/admin/uploads` → `public/uploads/` (max 6 MB; JPEG, PNG, WebP, GIF, AVIF)
+- **Flags:** Featured · Hot · Most Read
+- **Status:** `DRAFT` · `PUBLISHED` · `ARCHIVED`
+
+Admin UI labels are in **Vietnamese**; the public site is in **English**.
+
+---
 
 ## Tech stack
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js 16 (App Router) |
+| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
 | Language | TypeScript |
 | UI | React 19, Tailwind CSS 4 |
-| Database | MySQL (via Prisma + `@prisma/adapter-mariadb`) |
-| ORM | Prisma 7 |
-| Auth | JWT in httpOnly cookie, bcryptjs |
+| Database | MySQL / MariaDB |
+| ORM | Prisma 7 (`@prisma/adapter-mariadb`) |
+| Auth | JWT (httpOnly cookie), bcryptjs |
+| Validation | Zod |
 | Icons | lucide-react |
 
-## Project structure
-
-```
-src/
-├── app/
-│   ├── page.tsx                 # Homepage
-│   ├── search/                  # Search page
-│   ├── article/[slug]/          # Article detail
-│   ├── category/[slug]/         # Category page
-│   ├── login/                   # Admin login
-│   ├── admin/                   # CMS (protected)
-│   └── api/
-│       ├── auth/                # login, logout, me
-│       ├── admin/               # categories, articles, uploads
-│       └── public/              # home, categories, articles, search, like
-├── components/
-│   ├── public/                  # Public layout & news UI
-│   └── admin/                   # CMS shell, forms, dashboard
-├── lib/
-│   ├── prisma.ts                # Prisma client (MariaDB adapter)
-│   ├── auth.ts                  # JWT & cookie helpers
-│   ├── public-articles.ts       # Public data queries
-│   ├── article-blocks.ts        # Block content parse/serialize
-│   └── article-mapper.ts        # DB → public API shapes
-├── generated/prisma/            # Generated Prisma client (after db:generate)
-└── middleware.ts                # Protects /admin and /api/admin
-prisma/
-├── schema.prisma
-├── seed.ts                      # Admin user + sample categories/articles
-└── migrations/
-public/
-└── uploads/                     # Uploaded images (created at runtime)
-```
-
-## Database
-
-MySQL database name: **`website_news`** (configure via `DATABASE_URL`).
-
-### Models
-
-- **User** — admin accounts
-- **Category** — name, slug, description, sortOrder, isActive
-- **Article** — title, slug, excerpt, content (JSON blocks or legacy plain text), coverImage, author, source, status, flags, viewCount, likeCount, publishedAt
-
-Prisma client is generated to `src/generated/prisma/`.
+---
 
 ## Requirements
 
-- Node.js 20+
-- MySQL or MariaDB
-- npm
+- **Node.js** 20+
+- **MySQL** 8+ or **MariaDB** 10.6+
+- **npm** 9+
 
-## Setup
+---
 
-### 1. Install dependencies
+## Quick start
 
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-### 2. Environment variables
+# 2. Create .env in the project root (see Environment variables)
 
-Create a `.env` file in the project root:
-
-```env
-# MySQL connection string
-DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/website_news"
-
-# Required in production
-JWT_SECRET="your-secret-key"
-
-# Optional — base URL for server-side public API fetches (defaults to http://localhost:3000)
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-```
-
-### 3. Database
-
-Create the database, then apply schema and seed:
-
-```bash
+# 3. Set up the database
 npm run db:generate
 npm run db:migrate
 npm run db:seed
+
+# 4. Start development server
+npm run dev
 ```
 
-Verify connection and tables:
+| URL | Purpose |
+|-----|---------|
+| http://localhost:3000 | Public website |
+| http://localhost:3000/login | Admin login |
+| http://localhost:3000/admin | CMS (after login) |
+
+Verify the database connection:
 
 ```bash
 npm run db:check
 ```
 
-### 4. Run development server
+---
 
-```bash
-npm run dev
+## Environment variables
+
+Create a `.env` file in the project root:
+
+```env
+# Required — MySQL connection string
+DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/the_herald"
+
+# Required in production — used to sign admin JWT cookies
+JWT_SECRET="change-me-to-a-long-random-string"
+
+# Optional — base URL for server-side fetches (defaults to http://localhost:3000)
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-- Public site: [http://localhost:3000](http://localhost:3000)
-- Admin login: [http://localhost:3000/login](http://localhost:3000/login)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | MySQL connection URL |
+| `JWT_SECRET` | Production | Secret for signing admin session tokens |
+| `NEXT_PUBLIC_APP_URL` | No | Public origin for internal API calls |
 
-## Admin login
+---
 
-Default credentials (from `prisma/seed.ts`):
+## Database
+
+### Schema overview
+
+| Model | Purpose |
+|-------|---------|
+| **User** | Admin accounts |
+| **Category** | Sections (name, slug, description, sort order, active flag) |
+| **Article** | News items (content, cover, flags, views, likes, publish date) |
+
+Prisma client is generated to `src/generated/prisma/` after `npm run db:generate`.
+
+### Useful commands
+
+```bash
+npm run db:generate   # Regenerate Prisma client
+npm run db:migrate    # Apply migrations (development)
+npm run db:push       # Push schema without migration files
+npm run db:seed       # Seed admin user, categories, sample articles
+npm run db:studio     # Open Prisma Studio GUI
+```
+
+Re-run seed to refresh sample data (does not remove existing rows unless seed logic handles it):
+
+```bash
+npm run db:seed
+```
+
+---
+
+## Default admin login
+
+Credentials created by `prisma/seed.ts`:
 
 | Field | Value |
 |-------|-------|
 | Username | `admin` |
 | Password | `admin123456` |
 
-After login you are redirected to `/admin` → `/admin/dashboard`.
+Change the password after first login in production.
 
-To reset seed data:
-
-```bash
-npm run db:seed
-```
+---
 
 ## npm scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start Next.js dev server |
+| `npm run dev` | Start Next.js dev server (Turbopack) |
 | `npm run build` | Production build |
-| `npm run start` | Start production server |
+| `npm run start` | Run production server |
 | `npm run lint` | Run ESLint |
 | `npm run db:generate` | Generate Prisma client |
-| `npm run db:migrate` | Run migrations (`prisma migrate dev`) |
-| `npm run db:push` | Push schema without migration |
-| `npm run db:seed` | Seed admin, categories, articles |
-| `npm run db:check` | Verify DB connection and row counts |
+| `npm run db:migrate` | Run `prisma migrate dev` |
+| `npm run db:push` | Push schema to database |
+| `npm run db:seed` | Seed database |
+| `npm run db:check` | Check migration status + connection |
 | `npm run db:studio` | Open Prisma Studio |
 
-## API overview
+---
+
+## Project structure
+
+```
+src/
+├── app/
+│   ├── page.tsx                  # Homepage
+│   ├── search/                   # Search results
+│   ├── article/[slug]/           # Article detail
+│   ├── category/[slug]/          # Category listing
+│   ├── login/                    # Admin login
+│   ├── admin/                    # CMS (protected)
+│   └── api/
+│       ├── auth/                 # Login, logout, session
+│       ├── admin/                # Categories, articles, uploads
+│       └── public/               # Home, categories, articles, search, like
+├── components/
+│   ├── public/                   # Public layout & news UI
+│   └── admin/                    # CMS shell, forms, dashboard
+├── lib/
+│   ├── site.ts                   # Brand name, logo paths, SEO copy
+│   ├── prisma.ts                 # Prisma client
+│   ├── auth.ts                   # JWT helpers
+│   ├── public-articles.ts        # Public data queries
+│   ├── article-blocks.ts         # Block content parse/serialize
+│   └── article-mapper.ts         # DB → public types
+├── generated/prisma/             # Generated Prisma client
+└── middleware.ts                 # Protects /admin and /api/admin
+
+prisma/
+├── schema.prisma
+├── seed.ts
+└── migrations/
+
+public/
+├── logo.png                      # Full wordmark
+├── icon.png                      # H mark (favicon)
+└── uploads/                      # Uploaded images (runtime)
+```
+
+---
+
+## Routes
+
+### Public
+
+| Path | Page |
+|------|------|
+| `/` | Homepage |
+| `/category/[slug]` | Category |
+| `/article/[slug]` | Article |
+| `/search?q=` | Search |
+
+### Admin
+
+| Path | Page |
+|------|------|
+| `/login` | Login |
+| `/admin/dashboard` | Dashboard |
+| `/admin/articles` | Article list |
+| `/admin/articles/new` | Create article |
+| `/admin/articles/[id]/edit` | Edit article |
+| `/admin/categories` | Categories |
+
+---
+
+## API reference
 
 ### Auth
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/auth/login` | Login, set JWT cookie |
-| POST | `/api/auth/logout` | Clear cookie |
-| GET | `/api/auth/me` | Current admin info |
+| `POST` | `/api/auth/login` | Authenticate; sets httpOnly cookie |
+| `POST` | `/api/auth/logout` | Clear session cookie |
+| `GET` | `/api/auth/me` | Current admin user |
 
-Cookie name: `website_news_admin_token`
+Session cookie: `website_news_admin_token`
 
-### Admin (requires auth)
+### Admin (authenticated)
 
-| Path | Description |
-|------|-------------|
-| `/api/admin/categories` | List / create categories |
-| `/api/admin/categories/[id]` | Get / update / delete / toggle active |
-| `/api/admin/articles` | List / create articles |
-| `/api/admin/articles/[id]` | Get / update / delete article |
-| `/api/admin/uploads` | Upload image file |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` / `POST` | `/api/admin/categories` | List / create |
+| `GET` / `PATCH` / `DELETE` | `/api/admin/categories/[id]` | Read / update / delete |
+| `GET` / `POST` | `/api/admin/articles` | List / create |
+| `GET` / `PATCH` / `DELETE` | `/api/admin/articles/[id]` | Read / update / delete |
+| `POST` | `/api/admin/uploads` | Upload image |
 
 ### Public
 
-| Path | Description |
-|------|-------------|
-| `/api/public/home` | Homepage payload |
-| `/api/public/categories/[slug]` | Category page data |
-| `/api/public/articles/[slug]` | Article detail (+ view increment) |
-| `/api/public/search?q=` | Search published articles |
-| `/api/public/articles/[slug]/like` | Increment like count |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/public/home` | Homepage payload |
+| `GET` | `/api/public/categories/[slug]` | Category page data |
+| `GET` | `/api/public/articles/[slug]` | Article detail (increments views) |
+| `GET` | `/api/public/search?q=` | Search published articles |
+| `POST` | `/api/public/articles/[slug]/like` | Increment like count |
+
+---
 
 ## Article content format
 
-Article body is stored in `Article.content`:
+`Article.content` supports two formats:
 
-- **New format** — JSON array of blocks:
-  ```json
-  [
-    { "type": "text", "value": "Paragraph text..." },
-    { "type": "image", "url": "/uploads/abc.jpg", "title": "Optional", "caption": "Caption below image" }
-  ]
-  ```
-- **Legacy format** — plain text with `\n\n` between paragraphs
+**Block JSON (recommended)**
 
-**Cover image** (`coverImage`) is stored separately and used for cards, homepage, and the hero image on the article page — not mixed into body blocks.
+```json
+[
+  { "type": "text", "value": "Paragraph text…" },
+  {
+    "type": "image",
+    "url": "/uploads/example.jpg",
+    "title": "Optional title",
+    "caption": "Caption shown below the image"
+  }
+]
+```
 
-## Production notes
+**Legacy plain text** — paragraphs separated by `\n\n` (still rendered correctly).
 
-- Set a strong `JWT_SECRET` in production
-- Ensure `DATABASE_URL` points to your production MySQL instance
-- Run `npm run build && npm run start`
-- Uploaded files are saved under `public/uploads/` — back up or use external storage for production if needed
+---
+
+## Branding & SEO
+
+Central configuration: [`src/lib/site.ts`](src/lib/site.ts)
+
+| Constant | Purpose |
+|----------|---------|
+| `SITE_NAME` | Site title |
+| `SITE_TAGLINE` | Tagline (browser title suffix, logo) |
+| `SITE_DESCRIPTION` | Meta description |
+| `SITE_LOGO_PATH` | Full logo (`/logo.png`) |
+| `SITE_ICON_PATH` | H icon / favicon (`/icon.png`) |
+| `SITE_EMAIL` | Contact email in footer |
+
+Metadata is applied in [`src/app/layout.tsx`](src/app/layout.tsx).
+
+---
+
+## Production
+
+1. Set a strong `JWT_SECRET`.
+2. Point `DATABASE_URL` to your production MySQL instance.
+3. Run migrations and (optionally) seed:
+
+   ```bash
+   npm run db:generate
+   npx prisma migrate deploy
+   npm run build
+   npm run start
+   ```
+
+4. **Uploads** — files are stored in `public/uploads/`. Back up this directory or move to object storage for multi-instance deployments.
+5. Serve over HTTPS so httpOnly auth cookies are secure.
+
+---
 
 ## License
 
-Private project.
+Private project — all rights reserved.
